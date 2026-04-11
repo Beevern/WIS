@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>What are you in?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        /* Root theme variables */
+        :root {
+            --bg: #050814;
+            --panel: #0c1020;
+            --accent: #00e0ff;
+            --accent-soft: rgba(0, 255, 255, 0.25);
+            --text-main: #e5f6ff;
+            --text-muted: #8fa4c0;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --shadow-soft: 0 12px 35px rgba(0, 0, 0, 0.65);
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --transition-fast: 150ms ease-out;
+            --warning: #ffb347;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            sans-serif;
+            background: radial-gradient(circle at top, #1b2640 0, var(--bg) 55%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 24px;
+        }
+
+        /* Outer shell */
+        .app-shell {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(
+                    135deg,
+                    rgba(19, 27, 59, 0.95),
+                    rgba(5, 8, 23, 0.98)
+            );
+            border-radius: 20px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(0, 224, 255, 0.18);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border-subtle);
+            backdrop-filter: blur(10px);
+            background: radial-gradient(
+                    circle at top left,
+                    rgba(0, 224, 255, 0.16),
+                    transparent 60%
+            );
+        }
+
+        .app-title { display: flex; flex-direction: column; gap: 2px; }
+
+        .app-title h1 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .app-title span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Button styling */
+        .primary-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 20px;
+            background: radial-gradient(circle at top left, #35f3ff, #008cff);
+            color: #02040a;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6),
+            0 12px 30px rgba(0, 140, 255, 0.6);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform var(--transition-fast),
+            box-shadow var(--transition-fast), filter var(--transition-fast);
+        }
+
+        .primary-btn span.icon { font-size: 16px; margin-top: -2px; }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+            box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.35),
+            0 16px 40px rgba(0, 140, 255, 0.85);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 20px rgba(0, 140, 255, 0.65);
+        }
+
+        .app-body {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* Input (pre-analyze) layout */
+        .input-panel {
+            flex: 1;
+            padding: 14px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: radial-gradient(
+                    circle at top right,
+                    rgba(0, 224, 255, 0.22),
+                    transparent 60%
+            );
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .paste-card {
+            flex: 1 1 0;
+            min-width: 0;
+            background: linear-gradient(
+                    145deg,
+                    rgba(6, 12, 30, 0.98),
+                    rgba(2, 7, 22, 0.98)
+            );
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(0, 224, 255, 0.18);
+            padding: 10px 10px 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .paste-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .paste-title {
+            font-size: 12px;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .paste-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 130px;
+            resize: vertical;
+            background: rgba(3, 7, 20, 0.88);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 8px 9px;
+            color: var(--text-main);
+            font-size: 12px;
+            font-family: "Fira Code", Menlo, Consolas, monospace;
+            outline: none;
+            transition: border-color var(--transition-fast),
+            box-shadow var(--transition-fast), background var(--transition-fast);
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.55);
+            background: rgba(5, 10, 28, 0.96);
+        }
+
+        .analyze-row {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 6px;
+        }
+
+        /* Results (post-analyze) layout */
+        .ships-panel {
+            flex: 1;
+            padding: 14px 16px 16px;
+            display: none;
+            flex-direction: column;
+            background: radial-gradient(
+                    circle at top,
+                    rgba(0, 224, 255, 0.16),
+                    transparent 55%
+            );
+        }
+
+        .ships-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .ships-header h2 {
+            margin: 0;
+            font-size: 13px;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .pill {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 224, 255, 0.45);
+            background: radial-gradient(
+                    circle at top,
+                    var(--accent-soft),
+                    rgba(7, 13, 36, 0.9)
+            );
+            color: var(--text-main);
+        }
+
+        .ships-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .ship-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+            border-radius: var(--radius-md);
+        }
+
+        .ship-item {
+            border-radius: var(--radius-md);
+            margin-bottom: 6px;
+            background: linear-gradient(
+                    120deg,
+                    rgba(4, 9, 26, 0.9),
+                    rgba(11, 21, 48, 0.95)
+            );
+            border: 1px solid rgba(0, 224, 255, 0.15);
+            cursor: pointer;
+            transition: background var(--transition-fast),
+            border-color var(--transition-fast),
+            transform var(--transition-fast);
+        }
+
+        .ship-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+        }
+
+        .ship-main { display: flex; flex-direction: column; }
+
+        .ship-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .ship-name-text {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .ship-warning {
+            font-size: 11px;
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .ship-count {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .chevron {
+            font-size: 11px;
+            color: var(--accent);
+            transition: transform var(--transition-fast);
+        }
+
+        .ship-item.expanded .chevron { transform: rotate(90deg); }
+
+        .ship-item:hover {
+            border-color: rgba(0, 224, 255, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .ship-details {
+            display: none;
+            padding: 6px 10px 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: linear-gradient(
+                    130deg,
+                    rgba(7, 14, 36, 0.95),
+                    rgba(8, 24, 52, 0.95)
+            );
+        }
+
+        .ship-item.expanded .ship-details { display: block; }
+
+        /* Styled ship snapshot box */
+        .ship-stats-box {
+            border: 1px solid rgba(0, 224, 255, 0.35);
+            border-radius: 8px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            background: radial-gradient(circle at top left,
+            rgba(0, 224, 255, 0.12),
+            rgba(3, 8, 26, 0.95));
+            font-size: 11px;
+        }
+
+        .ship-stats-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--accent);
+        }
+
+        .ship-stats-line {
+            margin-bottom: 2px;
+        }
+
+        .ship-stats-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .pilot-row {
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+            font-size: 12px;
+        }
+
+        .pilot-row:last-child { border-bottom: none; }
+
+        .pilot-top-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pilot-name { font-weight: 500; }
+
+        .pilot-alliance {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .fit-tag {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 224, 255, 0.4);
+            color: var(--accent);
+            background: rgba(0, 224, 255, 0.05);
+        }
+
+        .pilot-bottom-line {
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .placeholder {
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 880px) {
+            body { padding: 12px; }
+            .app-shell { border-radius: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <header class="app-header">
+        <div class="app-title">
+            <h1>Who's in Space?</h1>
+            <span>Match ships on dscan to pilots in local!</span>
+        </div>
+        <button id="newScanBtn" class="primary-btn">
+            <span class="icon">⟳</span> New Scan
+        </button>
+    </header>
+
+    <div class="app-body">
+        <!-- INITIAL: 3 paste panes -->
+        <section id="inputPanel" class="input-panel">
+            <div class="input-row">
+                <article class="paste-card">
+                    <div class="paste-header">
+                        <div>
+                            <div class="paste-title">Ships on D-scan</div>
+                            <div class="paste-sub">D-scan → Ctrl+A → Ctrl+C</div>
+                        </div>
+                    </div>
+                    <textarea
+                            id="dscanInput"
+                            placeholder="Paste d-scan here"
+                    ></textarea>
+                </article>
+
+                <article class="paste-card">
+                    <div class="paste-header">
+                        <div>
+                            <div class="paste-title">Pilots in System</div>
+                            <div class="paste-sub">Local List → Ctrl+A → Ctrl+C</div>
+                        </div>
+                    </div>
+                    <textarea
+                            id="guestInput"
+                            placeholder="Paste local list here"
+                    ></textarea>
+                </article>
+
+                <article class="paste-card">
+                    <div class="paste-header">
+                        <div>
+                            <div class="paste-title">Docked Pilots</div>
+                            <div class="paste-sub">Guest List → Ctrl+A → Ctrl+C</div>
+                        </div>
+                    </div>
+                    <textarea
+                            id="stationInput"
+                            placeholder="Paste station guest list here (if applicable)"
+                    ></textarea>
+                </article>
+            </div>
+
+            <div class="analyze-row">
+                <button id="analyzeBtn" class="primary-btn">
+                    <span class="icon">✦</span> Analyze
+                </button>
+            </div>
+        </section>
+
+        <!-- RESULTS: ships dropdown list only -->
+        <section id="shipsPanel" class="ships-panel">
+            <div class="ships-header">
+                <h2>Ships on D-Scan</h2>
+                <span id="shipsMeta" class="pill">0 ships</span>
+            </div>
+            <div class="ships-hint">
+                Click any ship to see possible pilots, their alliance, and their
+                recently lost fits (placeholders; real data later from ESI/zkill).
+            </div>
+            <ul id="shipList" class="ship-list"></ul>
+        </section>
+    </div>
+</div>
+
+<script>
+    // --- Parsing helpers ----------------------------------------------------
+
+    // Parse D-scan: split by tabs, use 3rd last column as name, 2nd last as type.
+    function parseDscan(text) {
+        const lines = text
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+
+        const ignorePatterns = /(depot|tractor|capsule|shuttle|scanner)/i;
+        const ships = [];
+
+        for (const line of lines) {
+            const cols = line.split("\t").map(c => c.trim()).filter(c => c.length > 0);
+            if (cols.length < 2) continue;
+
+            const shipType = cols[cols.length - 2];
+            if (!shipType) continue;
+            if (ignorePatterns.test(shipType)) continue;
+
+            const shipName = cols[cols.length - 3];
+            const hasDashFlag = cols[cols.length - 1] === "-";
+
+            ships.push({
+                shipType,
+                shipName,
+                hasDashFlag
+            });
+        }
+        return ships;
+    }
+
+    // Parse local / guest list into full pilot names.
+    function parsePilotsBlock(text) {
+        return text
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+    }
+
+    // Parse docked list to a Set.
+    function parseDockedBlock(text) {
+        return new Set(parsePilotsBlock(text));
+    }
+
+    // Build placeholder per-ship pilot entries (docked filtered out).
+    function buildPilotsForShip(shipType, allPilots, dockedSet) {
+        const activePilots = allPilots.filter((p) => !dockedSet.has(p));
+        return activePilots.map((name) => {
+            const alliance = "ALLIANCE-X"; // placeholder
+            return {
+                name,
+                alliance,
+                recentLossSummary: `Recently lost ${shipType} fit (placeholder)`,
+                recentLossWhen: "Last loss: 3 days ago (placeholder)",
+                fitShort:
+                    "Rails / AB / Scram / Web / Damage Control (full fit from zkill – placeholder)",
+            };
+        });
+    }
+
+    // --- Rendering ----------------------------------------------------------
+
+    function renderShips(ships, pilots, dockedSet) {
+        const listEl = document.getElementById("shipList");
+        listEl.innerHTML = "";
+
+        const meta = document.getElementById("shipsMeta");
+        const activePilots = pilots.filter((p) => !dockedSet.has(p));
+        meta.textContent =
+            ships.length +
+            " ships | " +
+            activePilots.length +
+            " pilots in space (docked removed)";
+
+        ships.forEach((ship, index) => {
+            const li = document.createElement("li");
+            li.className = "ship-item";
+            li.dataset.index = index;
+
+            const header = document.createElement("div");
+            header.className = "ship-item-header";
+
+            const main = document.createElement("div");
+            main.className = "ship-main";
+
+            const nameRow = document.createElement("div");
+            nameRow.className = "ship-name-row";
+
+            const chevron = document.createElement("span");
+            chevron.className = "chevron";
+            chevron.textContent = "▶";
+
+            const nameContainer = document.createElement("span");
+            nameContainer.className = "ship-name-text";
+
+            const titleSpan = document.createElement("span");
+            const shipTitle = `${ship.shipName || "(unknown)"} - ${ship.shipType || "(unknown hull)"}`;
+            titleSpan.textContent = shipTitle;
+            nameContainer.appendChild(titleSpan);
+
+            // Inline warning next to name if last token was not "-"
+            if (!ship.hasDashFlag) {
+                const warnSpan = document.createElement("span");
+                warnSpan.className = "ship-warning";
+                warnSpan.textContent = "Warning! This ship is on grid with you!";
+                nameContainer.appendChild(warnSpan);
+            }
+
+            nameRow.appendChild(chevron);
+            nameRow.appendChild(nameContainer);
+            main.appendChild(nameRow);
+
+            const count = document.createElement("span");
+            count.className = "ship-count";
+            count.textContent =
+                activePilots.length > 0
+                    ? activePilots.length + " possible pilots"
+                    : "No pilots in space";
+
+            header.appendChild(main);
+            header.appendChild(count);
+
+            const details = document.createElement("div");
+            details.className = "ship-details";
+
+            if (ship.stats) {
+                const s = ship.stats;
+                const statsBox = document.createElement("div");
+                statsBox.className = "ship-stats-box";
+                statsBox.innerHTML = `
+                    <div class="ship-stats-title">${ship.shipName}</div>
+                    <div class="ship-stats-line">
+                        <span style="color:#7ecfff">Shield:</span>
+                        EM ${s.shieldResists.em}% &nbsp;/&nbsp;
+                        Therm ${s.shieldResists.therm}% &nbsp;/&nbsp;
+                        Kin ${s.shieldResists.kin}% &nbsp;/&nbsp;
+                        Exp ${s.shieldResists.exp}%
+                    </div>
+                    <div class="ship-stats-line">
+                        <span style="color:#ffb36b">Armor:</span>
+                        EM ${s.armorResists.em}% &nbsp;/&nbsp;
+                        Therm ${s.armorResists.therm}% &nbsp;/&nbsp;
+                        Kin ${s.armorResists.kin}% &nbsp;/&nbsp;
+                        Exp ${s.armorResists.exp}%
+                    </div>
+                    <div class="ship-stats-line">
+                        <span style="color:var(--text-muted)">Slots:</span>
+                        ${s.slots.high}H / ${s.slots.mid}M / ${s.slots.low}L / ${s.slots.rig} Rigs
+                    </div>
+                `;
+                details.appendChild(statsBox);
+            }
+
+            // Ship snapshot (styled, with separate armor/shield resists and no rigs).
+            const statsBox = document.createElement("div");
+            statsBox.className = "ship-stats-box";
+
+            const statsTitle = document.createElement("div");
+            statsTitle.className = "ship-stats-title";
+            statsTitle.textContent = "Important Ship Details";
+            statsBox.appendChild(statsTitle);
+
+            const shieldLine = document.createElement("div");
+            shieldLine.className = "ship-stats-line";
+            shieldLine.textContent =
+                "Shield Resists: EM 0% / Therm 20% / Kin 40% / Expl 50% (placeholder)";
+            statsBox.appendChild(shieldLine);
+
+            const armorLine = document.createElement("div");
+            armorLine.className = "ship-stats-line";
+            armorLine.textContent =
+                "Armor Resists: EM 50% / Therm 35% / Kin 25% / Expl 10% (placeholder)";
+            statsBox.appendChild(armorLine);
+
+            const bonusLine = document.createElement("div");
+            bonusLine.className = "ship-stats-line";
+            bonusLine.textContent =
+                "Bonuses: +5% weapon damage / +7.5% tracking / +10% web strength (placeholder)";
+            statsBox.appendChild(bonusLine);
+
+            const slotsLine = document.createElement("div");
+            slotsLine.className = "ship-stats-line";
+            slotsLine.textContent =
+                "Slots: 4 High / 3 Mid / 3 Low (placeholder)";
+            statsBox.appendChild(slotsLine);
+
+            details.appendChild(statsBox);
+
+            const shipPilots = buildPilotsForShip(
+                ship.shipType,
+                pilots,
+                dockedSet
+            );
+
+            if (shipPilots.length === 0) {
+                const p = document.createElement("div");
+                p.className = "pilot-bottom-line placeholder";
+                p.textContent =
+                    "No non-docked pilots matched in local for this ship. Being undocked is scary.";
+                details.appendChild(p);
+            } else {
+                shipPilots.forEach((p) => {
+                    const row = document.createElement("div");
+                    row.className = "pilot-row";
+
+                    const top = document.createElement("div");
+                    top.className = "pilot-top-line";
+                    const left = document.createElement("div");
+                    left.innerHTML =
+                        '<span class="pilot-name">' +
+                        p.name +
+                        "</span>" +
+                        ' <span class="pilot-alliance">[' +
+                        p.alliance +
+                        "]</span>";
+                    const tag = document.createElement("span");
+                    tag.className = "fit-tag";
+                    tag.textContent = "Recently lost fit (placeholder)";
+                    top.appendChild(left);
+                    top.appendChild(tag);
+
+                    const bottom = document.createElement("div");
+                    bottom.className = "pilot-bottom-line";
+                    bottom.textContent =
+                        p.recentLossWhen + " – " + p.fitShort + " (from zkill/ESI).";
+
+                    row.appendChild(top);
+                    row.appendChild(bottom);
+                    details.appendChild(row);
+                });
+            }
+
+            li.appendChild(header);
+            li.appendChild(details);
+
+            header.addEventListener("click", () => {
+                li.classList.toggle("expanded");
+            });
+
+            listEl.appendChild(li);
+        });
+    }
+
+    // --- State transitions --------------------------------------------------
+
+    async function handleAnalyze() {
+        const dscanText = document.getElementById("dscanInput").value.trim();
+        const guestText = document.getElementById("guestInput").value.trim();
+        const stationText = document.getElementById("stationInput").value.trim();
+
+        // Show loading state
+        const btn = document.getElementById("analyzeBtn");
+        btn.textContent = "Analyzing...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch("http://localhost:3001/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    localPaste: guestText,
+                    dscanPaste: dscanText,
+                    stationPaste: stationText
+                })
+            });
+
+            if (!response.ok) throw new Error("Backend error: " + response.status);
+
+            const data = await response.json();
+            renderResults(data);
+
+            document.getElementById("inputPanel").classList.add("hidden");
+            document.getElementById("shipsPanel").style.display = "flex";
+
+        } catch (err) {
+            alert("Error connecting to backend: " + err.message + "\n\nMake sure the backend is running (npm run dev).");
+        } finally {
+            btn.innerHTML = '<span class="icon">✦</span> Analyze';
+            btn.disabled = false;
+        }
+    }
+
+    function handleNewScan() {
+        document.getElementById("dscanInput").value = "";
+        document.getElementById("guestInput").value = "";
+        document.getElementById("stationInput").value = "";
+        document.getElementById("shipList").innerHTML = "";
+        document.getElementById("shipsMeta").textContent = "0 ships";
+
+        document.getElementById("shipsPanel").style.display = "none";
+        document.getElementById("inputPanel").classList.remove("hidden");
+    }
+
+    document
+        .getElementById("analyzeBtn")
+        .addEventListener("click", handleAnalyze);
+    document
+        .getElementById("newScanBtn")
+        .addEventListener("click", handleNewScan);
+
+    document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") {
+            handleAnalyze();
+        }
+    });
+    function renderResults(data) {
+        const listEl = document.getElementById("shipList");
+        listEl.innerHTML = "";
+
+        const meta = document.getElementById("shipsMeta");
+        meta.textContent = `${data.ships.length} ships | ${data.inSpacePilots.length} pilots in space`;
+
+        data.ships.forEach((ship) => {
+            const li = document.createElement("li");
+            li.className = "ship-item";
+
+            const header = document.createElement("div");
+            header.className = "ship-item-header";
+
+            const main = document.createElement("div");
+            main.className = "ship-main";
+
+            const nameRow = document.createElement("div");
+            nameRow.className = "ship-name-row";
+
+            const chevron = document.createElement("span");
+            chevron.className = "chevron";
+            chevron.textContent = "▶";
+
+            const nameContainer = document.createElement("span");
+            nameContainer.className = "ship-name-text";
+            nameContainer.innerHTML = `<span>${ship.shipName}</span>`;
+
+            nameRow.appendChild(chevron);
+            nameRow.appendChild(nameContainer);
+            main.appendChild(nameRow);
+
+            const countSpan = document.createElement("span");
+            countSpan.className = "ship-count";
+            countSpan.textContent = `${ship.count}x on scan | ${ship.matchedPilots.length} pilot matches`;
+
+            header.appendChild(main);
+            header.appendChild(countSpan);
+
+            const details = document.createElement("div");
+            details.className = "ship-details";
+
+            if (ship.matchedPilots.length === 0) {
+                details.innerHTML = `<div class="pilot-bottom-line placeholder">No pilots in local have recently lost this ship type.</div>`;
+            } else {
+                ship.matchedPilots.forEach((pilot) => {
+                    pilot.matchedLosses.forEach((loss) => {
+                        const row = document.createElement("div");
+                        row.className = "pilot-row";
+
+                        // Group fitting by slot
+                        const bySlot = {};
+                        loss.fitting.forEach(item => {
+                            if (!bySlot[item.slot]) bySlot[item.slot] = [];
+                            bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
+                        });
+
+                        const fitLines = Object.entries(bySlot)
+                            .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(", ")}</div>`)
+                            .join("");
+
+                        const lostDate = new Date(loss.killmailTime).toLocaleDateString();
+                        const valueM = (loss.totalValue / 1_000_000).toFixed(1);
+
+                        row.innerHTML = `
+                            <div class="pilot-top-line">
+                                <div>
+                                    <span class="pilot-name">${pilot.characterName}</span>
+                                    <span class="pilot-alliance">${pilot.allianceName || pilot.corporationName}</span>
+                                </div>
+                                <a href="https://zkillboard.com/kill/${loss.killmailId}/" target="_blank" class="fit-tag">
+                                    Lost ${lostDate} · ${valueM}M ISK
+                                </a>
+                            </div>
+                            <div class="pilot-bottom-line" style="margin-top:4px">${fitLines || "No fitting data"}</div>
+                        `;
+
+                        details.appendChild(row);
+                    });
+                });
+            }
+
+            li.appendChild(header);
+            li.appendChild(details);
+            header.addEventListener("click", () => li.classList.toggle("expanded"));
+            listEl.appendChild(li);
+        });
+
+        // Show any backend errors
+        if (data.errors && data.errors.length > 0) {
+            console.warn("Backend errors:", data.errors);
+        }
+    }
+</script>
+</body>
+</html>
