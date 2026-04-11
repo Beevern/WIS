@@ -276,6 +276,10 @@ const ATTR = {
   armorThermRes:  270,
   armorKinRes:    269,
   armorExpRes:    268,
+  hullEmRes:      974,
+  hullThermRes:   975,
+  hullKinRes:     976,
+  hullExpRes:     977,
   hiSlots:        14,
   medSlots:       13,
   lowSlots:       12,
@@ -318,6 +322,12 @@ export async function getShipStats(typeId: number): Promise<ShipStats | null> {
       kin:   resist(ATTR.armorKinRes),
       exp:   resist(ATTR.armorExpRes),
     },
+    hullResists: {
+      em:    resist(ATTR.hullEmRes),
+      therm: resist(ATTR.hullThermRes),
+      kin:   resist(ATTR.hullKinRes),
+      exp:   resist(ATTR.hullExpRes),
+    },
     bonuses,
     slots: {
       high: slot(ATTR.hiSlots),
@@ -330,29 +340,54 @@ export async function getShipStats(typeId: number): Promise<ShipStats | null> {
 
 // ── zKillboard helpers ──────────────────────────────────────────────────────
 
+
 /**
- * Fetch recent losses for a character from zKillboard.
- * Returns up to `limit` entries (default 25).
+ * Fetch losses for a specific character + ship type from zKillboard.
+ * Uses characterID + shipTypeID filters (both proven to work).
+ * Paginates newest-first and stops as soon as a page contains an entry
+ * older than sinceMs, so we never over-fetch.
  */
-export async function getCharacterLosses(
+export async function getCharacterShipLosses(
   characterId: number,
-  limit = 25
+  shipTypeId: number,
+  sinceMs: number
 ): Promise<ZkillEntry[]> {
-  const key = `losses:${characterId}`;
+  const cacheHour = Math.floor(sinceMs / (60 * 60 * 1000));
+  const key = `losses:${characterId}:${shipTypeId}:${cacheHour}`;
   const cached = zkillCache.get(key);
   if (cached) return cached;
 
-  try {
-    const resp = await retry(() =>
-      zkill.get<ZkillEntry[]>(`/losses/characterID/${characterId}/`)
-    );
-    const entries = (resp.data || []).slice(0, limit);
-    zkillCache.set(key, entries, ZKILL_TTL);
-    return entries;
-  } catch (err: any) {
-    console.warn(`zKill fetch failed for ${characterId}:`, err?.message);
-    return [];
+  const all: ZkillEntry[] = [];
+  for (let page = 1; page <= 10; page++) {
+    try {
+      const resp = await retry(() =>
+        zkill.get<ZkillEntry[]>(
+          `/losses/characterID/${characterId}/shipTypeID/${shipTypeId}/page/${page}/`
+        )
+      );
+      const entries = resp.data ?? [];
+      if (entries.length === 0) break;
+
+      // zkill returns newest-first; stop once we hit entries older than the window
+      const withinWindow = entries.filter(e => {
+        if (!e.killmail_time) return true; // keep if date unknown, filter later
+        return new Date(e.killmail_time).getTime() >= sinceMs;
+      });
+      all.push(...withinWindow);
+
+      // If any entry on this page was outside the window we've covered the cutoff
+      const hitCutoff = entries.some(
+        e => e.killmail_time && new Date(e.killmail_time).getTime() < sinceMs
+      );
+      if (hitCutoff || entries.length < 200) break;
+    } catch (err: any) {
+      console.warn(`zKill fetch failed for char=${characterId} ship=${shipTypeId}:`, err?.message);
+      break;
+    }
   }
+
+  zkillCache.set(key, all, ZKILL_TTL);
+  return all;
 }
 
 /**

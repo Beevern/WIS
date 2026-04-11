@@ -374,12 +374,17 @@
 
         .pilot-top-line {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             gap: 8px;
         }
 
-        .pilot-name { font-weight: 500; }
+        .pilot-name {
+            font-weight: 500;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .pilot-name:hover { color: var(--accent); text-decoration: underline; }
 
         .pilot-alliance {
             font-size: 11px;
@@ -401,12 +406,89 @@
             color: var(--text-muted);
         }
 
+        .pilot-bottom-line.km-fit:hover { color: var(--accent); }
+
         .placeholder {
             font-style: italic;
             color: var(--text-muted);
         }
 
         .hidden { display: none !important; }
+
+        /* Resistance display */
+        .resist-display {
+            padding: 5px 10px 7px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(2, 5, 18, 0.55);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .resist-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .resist-layer-label {
+            width: 46px;
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .resist-cells {
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .resist-cell {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .resist-dmg-label {
+            font-size: 9px;
+            width: 20px;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .resist-bar-track {
+            flex: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            min-width: 16px;
+        }
+
+        .resist-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            opacity: 0.75;
+        }
+
+        .resist-pct {
+            font-size: 9px;
+            width: 22px;
+            text-align: right;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .resist-loading {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 2px 0;
+        }
 
         @media (max-width: 880px) {
             body { padding: 12px; }
@@ -465,7 +547,7 @@
                     </div>
                     <textarea
                             id="stationInput"
-                            placeholder="Paste station guest list here (if applicable)"
+                            placeholder="Recommended: Paste station guest list here (Analyzing will take longer if there are many ships or undocked characters)"
                     ></textarea>
                 </article>
             </div>
@@ -799,12 +881,52 @@
             handleAnalyze();
         }
     });
+    // --- Resistance display (uses stats returned by the backend) --------------
+
+    function buildResistDisplay(stats) {
+        const div = document.createElement("div");
+        div.className = "resist-display";
+
+        if (!stats) {
+            div.innerHTML = '<div class="resist-loading">No resistance data for this hull</div>';
+            return div;
+        }
+
+        const layers = [
+            { resists: stats.shieldResists, label: 'Shield', color: '#7ecfff' },
+            { resists: stats.armorResists,  label: 'Armor',  color: '#ffb36b' },
+            { resists: stats.hullResists,   label: 'Hull',   color: '#8fa4c0' },
+        ];
+        const dmg = [
+            { key: 'em',    label: 'EM', color: '#e8d44a' },
+            { key: 'therm', label: 'Th', color: '#ff6535' },
+            { key: 'kin',   label: 'Ki', color: '#4ab4ff' },
+            { key: 'exp',   label: 'Ex', color: '#ff9c35' },
+        ];
+
+        div.innerHTML = layers.map(l => `
+            <div class="resist-row">
+                <span class="resist-layer-label" style="color:${l.color}">${l.label}</span>
+                <div class="resist-cells">${dmg.map(d => `
+                    <div class="resist-cell">
+                        <span class="resist-dmg-label" style="color:${d.color}">${d.label}</span>
+                        <div class="resist-bar-track">
+                            <div class="resist-bar-fill" style="width:${l.resists[d.key]}%;background:${d.color}"></div>
+                        </div>
+                        <span class="resist-pct">${l.resists[d.key]}%</span>
+                    </div>`).join('')}
+                </div>
+            </div>`).join('');
+
+        return div;
+    }
+
     function renderResults(data) {
         const listEl = document.getElementById("shipList");
         listEl.innerHTML = "";
 
         const meta = document.getElementById("shipsMeta");
-        meta.textContent = `${data.ships.length} ships | ${data.inSpacePilots.length} pilots in space`;
+        meta.textContent = `${data.ships.length} distinct ships | ${data.inSpacePilots.length} pilots in space`;
 
         data.ships.forEach((ship) => {
             const li = document.createElement("li");
@@ -841,6 +963,8 @@
             const details = document.createElement("div");
             details.className = "ship-details";
 
+            details.appendChild(buildResistDisplay(ship.stats));
+
             if (ship.matchedPilots.length === 0) {
                 details.innerHTML = `<div class="pilot-bottom-line placeholder">No pilots in local have recently lost this ship type.</div>`;
             } else {
@@ -863,18 +987,16 @@
                         const lostDate = new Date(loss.killmailTime).toLocaleDateString();
                         const valueM = (loss.totalValue / 1_000_000).toFixed(1);
 
+                        const kmUrl = `https://zkillboard.com/kill/${loss.killmailId}/`;
                         row.innerHTML = `
                             <div class="pilot-top-line">
-                                <div>
-                                    <span class="pilot-name">${pilot.characterName}</span>
-                                    <span class="pilot-alliance">${pilot.allianceName || pilot.corporationName}</span>
-                                </div>
-                                <a href="https://zkillboard.com/kill/${loss.killmailId}/" target="_blank" class="fit-tag">
-                                    Lost ${lostDate} · ${valueM}M ISK
-                                </a>
+                                <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${pilot.characterName}</a>
+                                <span class="pilot-alliance">${pilot.allianceName || pilot.corporationName}</span>
+                                <a href="${kmUrl}" target="_blank" class="fit-tag">Lost ${lostDate} · ${valueM}M ISK</a>
                             </div>
-                            <div class="pilot-bottom-line" style="margin-top:4px">${fitLines || "No fitting data"}</div>
+                            <div class="pilot-bottom-line km-fit" style="margin-top:4px;cursor:pointer">${fitLines || "No fitting data"}</div>
                         `;
+                        row.querySelector('.km-fit').addEventListener('click', () => window.open(kmUrl, '_blank'));
 
                         details.appendChild(row);
                     });

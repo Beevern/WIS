@@ -31,6 +31,7 @@ export interface DogmaAttribute {
 
 export interface ZkillEntry {
   killmail_id: number;
+  killmail_time?: string;   // zkill includes this — use it to stop pagination early
   zkb: {
     hash: string;
     totalValue: number;
@@ -116,6 +117,7 @@ export interface PilotMatch {
 export interface ShipStats {
   shieldResists: { em: number; therm: number; kin: number; exp: number };
   armorResists:  { em: number; therm: number; kin: number; exp: number };
+  hullResists:   { em: number; therm: number; kin: number; exp: number };
   bonuses: string[];
   slots: { high: number; mid: number; low: number; rig: number };
 }

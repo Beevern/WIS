@@ -12,7 +12,7 @@ import {
   getCorporation,
   getAlliance,
   resolveTypeName,
-  getCharacterLosses,
+  getCharacterShipLosses,
   getKillmail,
   getShipStats,
 } from "./eveApi";
@@ -85,6 +85,11 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
   // 2. Resolve pilot names → character IDs
   const nameToId = await resolveCharacterNames(localPilots);
   console.log(`[analyze] Resolved ${nameToId.size}/${localPilots.length} pilot IDs`);
+  // ESI may return names in a different canonical casing than what was pasted — build
+  // a lowercase fallback so the later .get() never silently misses a resolved pilot.
+  const nameToIdLower = new Map<string, number>(
+    [...nameToId.entries()].map(([k, v]) => [k.toLowerCase(), v])
+  );
   if (nameToId.size === 0) {
     errors.push("Could not resolve any character IDs. Check ESI is reachable.");
   }
@@ -105,12 +110,13 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
   const pilotsToAnalyze = dockedNames.length > 0 ? inSpacePilots : localPilots;
   console.log(`[analyze] Analyzing ${pilotsToAnalyze.length} pilots (${dockedPilots.length} docked/skipped)`);
 
-  // 4. Resolve all d-scan ship names → type IDs in one batch POST
+  // 4. Resolve all d-scan ship names → type IDs
   const shipTypeIds = new Map<string, number | null>();
   if (dscanShips.length > 0) {
     const shipNames = dscanShips.map(s => s.shipName);
+
+    // Attempt a single bulk POST first (fast path)
     try {
-      // Use the bulk endpoint directly for all ship names at once
       const resp = await (await import("axios")).default.post<{
         inventory_types?: Array<{ id: number; name: string }>;
       }>(
@@ -123,14 +129,25 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
       );
       const types = resp.data?.inventory_types ?? [];
       for (const t of types) {
-        // match back by name (case-insensitive)
         const original = shipNames.find(n => n.toLowerCase() === t.name.toLowerCase());
         if (original) shipTypeIds.set(original, t.id);
       }
     } catch (err: any) {
       console.warn("[analyze] Bulk ship type resolution failed:", err?.message);
     }
-    // Fill in nulls for any that didn't resolve
+
+    // Individual fallback for anything the batch missed — uses resolveTypeName
+    // which has retry logic and a 24 h cache, so it handles transient failures.
+    const unresolved = shipNames.filter(n => !shipTypeIds.has(n));
+    if (unresolved.length > 0) {
+      console.log(`[analyze] Falling back to individual resolution for: ${unresolved.join(", ")}`);
+      await Promise.all(unresolved.map(async (name) => {
+        const id = await resolveTypeName(name);
+        shipTypeIds.set(name, id);
+      }));
+    }
+
+    // Mark any that still failed as null
     for (const { shipName } of dscanShips) {
       if (!shipTypeIds.has(shipName)) shipTypeIds.set(shipName, null);
     }
@@ -139,13 +156,7 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
     console.log(`[analyze] Ship type "${name}" → typeId ${id}`);
   }
 
-  // 5. Build set of relevant type IDs
-  const relevantTypeIds = new Set<number>(
-    Array.from(shipTypeIds.values()).filter((id): id is number => id !== null)
-  );
-  console.log(`[analyze] Relevant typeIds:`, Array.from(relevantTypeIds));
-
-  // 6. Fetch losses per pilot and match against d-scan
+  // 5. Fetch losses per pilot and match against d-scan
   const pilotDataMap = new Map<
     string,
     { characterId: number; losses: RecentLoss[]; corpName: string; allianceName?: string }
@@ -153,18 +164,15 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
 
   await Promise.all(
     pilotsToAnalyze.map(async (pilotName) => {
-      const characterId = nameToId.get(pilotName);
+      const characterId = nameToId.get(pilotName) ?? nameToIdLower.get(pilotName.toLowerCase());
       if (!characterId) {
         errors.push(`Could not resolve character ID for: ${pilotName}`);
         return;
       }
 
-      const [char, zkillLosses] = await Promise.all([
-        getCharacter(characterId),
-        getCharacterLosses(characterId, 50),
-      ]);
+      const cutoff = Date.now() - 180 * 24 * 60 * 60 * 1000;
 
-      console.log(`[analyze] ${pilotName} (${characterId}): ${zkillLosses.length} recent losses from zkill`);
+      const char = await getCharacter(characterId);
 
       let corpName = "Unknown Corp";
       let allianceName: string | undefined;
@@ -180,42 +188,34 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
 
       const matchedLosses: RecentLoss[] = [];
 
-      const NINETY_DAYS_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
-      const cutoff = Date.now() - NINETY_DAYS_MS;
+      // Query zkill once per (pilot, shipType) pair — server-side filtered,
+      // so we only receive killmails that are actually relevant.
+      const resolvedShips = Array.from(shipTypeIds.entries())
+        .filter((entry): entry is [string, number] => entry[1] !== null);
 
       await Promise.all(
-        zkillLosses.map(async (zkEntry) => {
-          const km = await getKillmail(zkEntry.killmail_id, zkEntry.zkb.hash);
-          if (!km) return;
+        resolvedShips.map(async ([shipName, typeId]) => {
+          const zkEntries = await getCharacterShipLosses(characterId, typeId, cutoff);
+          console.log(`  [zkill] ${pilotName} × ${shipName}: ${zkEntries.length} losses`);
 
-          // Skip losses older than 90 days
-          if (new Date(km.killmail_time).getTime() < cutoff) return;
+          await Promise.all(
+            zkEntries.map(async (zkEntry) => {
+              const km = await getKillmail(zkEntry.killmail_id, zkEntry.zkb.hash);
+              if (!km) return;
+              if (new Date(km.killmail_time).getTime() < cutoff) return;
 
-          const lostTypeId = km.victim.ship_type_id;
-
-          console.log(`  [loss] ${pilotName} lost typeId=${lostTypeId} — relevant? ${relevantTypeIds.has(lostTypeId)}`);
-
-          if (!relevantTypeIds.has(lostTypeId)) return;
-
-          const fitting = await parseFitting(km.victim.items ?? []);
-
-          let shipName = "Unknown Ship";
-          for (const [name, id] of shipTypeIds.entries()) {
-            if (id === lostTypeId) {
-              shipName = name;
-              break;
-            }
-          }
-
-          matchedLosses.push({
-            killmailId: km.killmail_id,
-            killmailTime: km.killmail_time,
-            shipTypeId: lostTypeId,
-            shipName,
-            totalValue: zkEntry.zkb.totalValue,
-            fitting,
-            solarSystemId: km.solar_system_id,
-          });
+              const fitting = await parseFitting(km.victim.items ?? []);
+              matchedLosses.push({
+                killmailId: km.killmail_id,
+                killmailTime: km.killmail_time,
+                shipTypeId: typeId,
+                shipName,
+                totalValue: zkEntry.zkb.totalValue,
+                fitting,
+                solarSystemId: km.solar_system_id,
+              });
+            })
+          );
         })
       );
 

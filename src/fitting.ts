@@ -157,6 +157,9 @@ export async function parseFitting(
     // Filter ammo: exclude charges (categoryId=8) in high/mid slots
     if (EXCLUDED_CATEGORY_IDS.has(typeInfo.categoryId) && slotCat !== "Drone Bay") continue;
 
+    // Filter high slot items with qty > 8 (ships have at most 8 high slots; higher counts indicate ammo)
+    if (slotCat === "High Slot" && qty > 8) continue;
+
     fittingItems.push({
       typeId: item.item_type_id,
       typeName: typeInfo.name,
