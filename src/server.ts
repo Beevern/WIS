@@ -38,8 +38,9 @@ app.get("/health", (_req: Request, res: Response) => {
 app.post("/analyze", async (req: Request, res: Response) => {
   const body = req.body as Partial<AnalyzeRequest>;
 
-  if (!body.localPaste || typeof body.localPaste !== "string") {
-    res.status(400).json({ error: "localPaste is required (string)" });
+  // localPaste may be empty (screenshot-only mode sends no local list)
+  if (body.localPaste === undefined || body.localPaste === null || typeof body.localPaste !== "string") {
+    res.status(400).json({ error: "localPaste must be a string" });
     return;
   }
   if (!body.dscanPaste || typeof body.dscanPaste !== "string") {

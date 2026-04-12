@@ -276,10 +276,12 @@ const ATTR = {
   armorThermRes:  270,
   armorKinRes:    269,
   armorExpRes:    268,
-  hullEmRes:      974,
-  hullThermRes:   975,
-  hullKinRes:     976,
-  hullExpRes:     977,
+  // Ship structure (hull) resonance attributes — SDE attribute IDs for player ships
+  // Note: 974-977 are upwell/sovereignty structure attributes, not ship hull attributes
+  hullEmRes:      113,
+  hullThermRes:   110,
+  hullKinRes:     109,
+  hullExpRes:     111,
   hiSlots:        14,
   medSlots:       13,
   lowSlots:       12,
@@ -299,7 +301,9 @@ export async function getShipStats(typeId: number): Promise<ShipStats | null> {
 
   const resist = (id: number) => {
     const raw = attrMap.get(id);
-    return raw !== undefined ? Math.round((1 - raw) * 100) : 0;
+    if (raw === undefined) return 0;
+    // resonance: 1.0 = 0% resist, 0.0 = 100% resist. Clamp to [0,100] to guard against stale/wrong IDs.
+    return Math.max(0, Math.min(100, Math.round((1 - raw) * 100)));
   };
   const slot = (id: number) => Math.round(attrMap.get(id) ?? 0);
 

@@ -5,7 +5,6 @@
     <title>What are you in?</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-        /* Root theme variables */
         :root {
             --bg: #050814;
             --panel: #0c1020;
@@ -19,6 +18,7 @@
             --radius-md: 10px;
             --transition-fast: 150ms ease-out;
             --warning: #ffb347;
+            --confirmed: #00ff88;
         }
 
         * { box-sizing: border-box; }
@@ -26,8 +26,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-            sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: radial-gradient(circle at top, #1b2640 0, var(--bg) 55%);
             color: var(--text-main);
             display: flex;
@@ -36,24 +35,18 @@
             padding: 24px;
         }
 
-        /* Outer shell */
         .app-shell {
             width: 100%;
             max-width: 1200px;
-            background: linear-gradient(
-                    135deg,
-                    rgba(19, 27, 59, 0.95),
-                    rgba(5, 8, 23, 0.98)
-            );
+            background: linear-gradient(135deg, rgba(19,27,59,0.95), rgba(5,8,23,0.98));
             border-radius: 20px;
             box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(0, 224, 255, 0.18);
+            border: 1px solid rgba(0,224,255,0.18);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* Header */
         .app-header {
             display: flex;
             align-items: center;
@@ -61,28 +54,13 @@
             padding: 16px 22px;
             border-bottom: 1px solid var(--border-subtle);
             backdrop-filter: blur(10px);
-            background: radial-gradient(
-                    circle at top left,
-                    rgba(0, 224, 255, 0.16),
-                    transparent 60%
-            );
+            background: radial-gradient(circle at top left, rgba(0,224,255,0.16), transparent 60%);
         }
 
         .app-title { display: flex; flex-direction: column; gap: 2px; }
+        .app-title h1 { margin: 0; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase; }
+        .app-title span { font-size: 12px; color: var(--text-muted); }
 
-        .app-title h1 {
-            margin: 0;
-            font-size: 18px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .app-title span {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* Button styling */
         .primary-btn {
             border: none;
             border-radius: 999px;
@@ -94,67 +72,41 @@
             letter-spacing: 0.06em;
             text-transform: uppercase;
             cursor: pointer;
-            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6),
-            0 12px 30px rgba(0, 140, 255, 0.6);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 12px 30px rgba(0,140,255,0.6);
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: transform var(--transition-fast),
-            box-shadow var(--transition-fast), filter var(--transition-fast);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
         }
-
         .primary-btn span.icon { font-size: 16px; margin-top: -2px; }
-
         .primary-btn:hover {
             transform: translateY(-1px);
             filter: brightness(1.05);
-            box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.35),
-            0 16px 40px rgba(0, 140, 255, 0.85);
+            box-shadow: 0 0 0 1px rgba(0,224,255,0.35), 0 16px 40px rgba(0,140,255,0.85);
         }
+        .primary-btn:active { transform: translateY(0); box-shadow: 0 6px 20px rgba(0,140,255,0.65); }
 
-        .primary-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 6px 20px rgba(0, 140, 255, 0.65);
-        }
+        .app-body { flex: 1; display: flex; flex-direction: row; }
 
-        .app-body {
-            flex: 1;
-            display: flex;
-            flex-direction: row;
-        }
-
-        /* Input (pre-analyze) layout */
         .input-panel {
             flex: 1;
             padding: 14px 16px 16px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: radial-gradient(
-                    circle at top right,
-                    rgba(0, 224, 255, 0.22),
-                    transparent 60%
-            );
+            background: radial-gradient(circle at top right, rgba(0,224,255,0.22), transparent 60%);
         }
 
-        .input-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .input-row { display: flex; gap: 12px; flex-wrap: wrap; flex: 1; }
 
         .paste-card {
             flex: 1 1 0;
             min-width: 0;
-            background: linear-gradient(
-                    145deg,
-                    rgba(6, 12, 30, 0.98),
-                    rgba(2, 7, 22, 0.98)
-            );
+            background: linear-gradient(145deg, rgba(6,12,30,0.98), rgba(2,7,22,0.98));
             border-radius: var(--radius-lg);
-            border: 1px solid rgba(0, 224, 255, 0.18);
+            border: 1px solid rgba(0,224,255,0.18);
             padding: 10px 10px 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
         }
@@ -165,39 +117,162 @@
             align-items: baseline;
             margin-bottom: 6px;
         }
-
-        .paste-title {
-            font-size: 12px;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-
-        .paste-sub {
-            font-size: 10px;
-            color: var(--text-muted);
-        }
+        .paste-title { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+        .paste-sub { font-size: 10px; color: var(--text-muted); }
 
         textarea {
+            flex: 1;
             width: 100%;
-            min-height: 130px;
+            min-height: 60px;
             resize: vertical;
-            background: rgba(3, 7, 20, 0.88);
+            background: rgba(3,7,20,0.88);
             border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255,255,255,0.12);
             padding: 8px 9px;
             color: var(--text-main);
             font-size: 12px;
             font-family: "Fira Code", Menlo, Consolas, monospace;
             outline: none;
-            transition: border-color var(--transition-fast),
-            box-shadow var(--transition-fast), background var(--transition-fast);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(0,224,255,0.55); background: rgba(5,10,28,0.96); }
+
+        /* ── Station + screenshot column ── */
+        .station-col {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        textarea:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.55);
-            background: rgba(5, 10, 28, 0.96);
+        /* ── Screenshot card ── */
+        .screenshot-card {
+            flex: 1 1 0;
+            background: linear-gradient(145deg, rgba(6,12,30,0.98), rgba(2,7,22,0.98));
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(0,224,255,0.18);
+            padding: 10px 10px 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screenshot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .clear-ss-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 2px 8px;
+            cursor: pointer;
+            transition: color var(--transition-fast), border-color var(--transition-fast);
+        }
+        .clear-ss-btn:hover { color: var(--text-main); border-color: rgba(255,255,255,0.35); }
+
+        .screenshot-drop-zone {
+            border: 2px dashed rgba(0,224,255,0.22);
+            border-radius: 10px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+        .screenshot-drop-zone.drag-over {
+            border-color: rgba(0,224,255,0.65);
+            background: rgba(0,224,255,0.05);
+        }
+        .screenshot-drop-zone.has-image { cursor: default; min-height: 0; border-style: solid; border-color: rgba(0,224,255,0.3); }
+
+        .screenshot-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 14px;
+            color: var(--text-muted);
+            font-size: 12px;
+            pointer-events: none;
+        }
+        .screenshot-placeholder .ss-icon { font-size: 22px; }
+        .screenshot-placeholder .ss-hint { font-size: 10px; opacity: 0.65; }
+
+        .screenshot-preview { display: none; width: 100%; }
+        .screenshot-preview img {
+            width: 100%;
+            max-height: 90px;
+            object-fit: contain;
+            border-radius: 6px;
+            display: block;
+        }
+
+        .ocr-status {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0 2px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .ocr-spinner {
+            width: 11px; height: 11px;
+            border: 2px solid rgba(0,224,255,0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .confirmed-preview {
+            display: none;
+            margin-top: 8px;
+            padding: 7px 9px;
+            background: rgba(0,255,136,0.04);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 8px;
+        }
+        .confirmed-preview-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .confirmed-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 3px 0;
+            font-size: 12px;
+            border-bottom: 1px dashed rgba(255,255,255,0.06);
+            flex-wrap: wrap;
+        }
+        .confirmed-preview-item:last-child { border-bottom: none; }
+
+        /* ── Confirmed badge ── */
+        .confirmed-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(0,255,136,0.12);
+            border: 1px solid rgba(0,255,136,0.45);
+            color: var(--confirmed);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .analyze-row {
@@ -207,288 +282,108 @@
             padding-top: 6px;
         }
 
-        /* Results (post-analyze) layout */
+        /* Results */
         .ships-panel {
             flex: 1;
             padding: 14px 16px 16px;
             display: none;
             flex-direction: column;
-            background: radial-gradient(
-                    circle at top,
-                    rgba(0, 224, 255, 0.16),
-                    transparent 55%
-            );
+            background: radial-gradient(circle at top, rgba(0,224,255,0.16), transparent 55%);
         }
-
-        .ships-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .ships-header h2 {
-            margin: 0;
-            font-size: 13px;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
+        .ships-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .ships-header h2 { margin: 0; font-size: 13px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
 
         .pill {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            border: 1px solid rgba(0, 224, 255, 0.45);
-            background: radial-gradient(
-                    circle at top,
-                    var(--accent-soft),
-                    rgba(7, 13, 36, 0.9)
-            );
+            font-size: 11px; padding: 3px 8px; border-radius: 999px;
+            border: 1px solid rgba(0,224,255,0.45);
+            background: radial-gradient(circle at top, var(--accent-soft), rgba(7,13,36,0.9));
             color: var(--text-main);
         }
 
-        .ships-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
+        .ships-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
 
-        .ship-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            overflow-y: auto;
-            flex: 1;
-            border-radius: var(--radius-md);
-        }
+        .ship-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; border-radius: var(--radius-md); }
 
         .ship-item {
             border-radius: var(--radius-md);
             margin-bottom: 6px;
-            background: linear-gradient(
-                    120deg,
-                    rgba(4, 9, 26, 0.9),
-                    rgba(11, 21, 48, 0.95)
-            );
-            border: 1px solid rgba(0, 224, 255, 0.15);
+            background: linear-gradient(120deg, rgba(4,9,26,0.9), rgba(11,21,48,0.95));
+            border: 1px solid rgba(0,224,255,0.15);
             cursor: pointer;
-            transition: background var(--transition-fast),
-            border-color var(--transition-fast),
-            transform var(--transition-fast);
+            transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
         }
+        .ship-item:hover { border-color: rgba(0,224,255,0.45); transform: translateY(-1px); }
 
-        .ship-item-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 10px;
-        }
+        /* Confirmed ship gets a green-tinted border */
+        .ship-item.has-confirmed { border-color: rgba(0,255,136,0.3); }
+        .ship-item.has-confirmed:hover { border-color: rgba(0,255,136,0.6); }
 
+        .ship-item-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; }
         .ship-main { display: flex; flex-direction: column; }
-
-        .ship-name-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .ship-name-text {
-            display: inline-flex;
-            align-items: baseline;
-            gap: 6px;
-        }
-
-        .ship-warning {
-            font-size: 11px;
-            color: var(--warning);
-            font-weight: 600;
-        }
-
-        .ship-count {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .chevron {
-            font-size: 11px;
-            color: var(--accent);
-            transition: transform var(--transition-fast);
-        }
-
+        .ship-name-row { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+        .ship-name-text { display: inline-flex; align-items: baseline; gap: 6px; }
+        .ship-warning { font-size: 11px; color: var(--warning); font-weight: 600; }
+        .ship-count { font-size: 11px; color: var(--text-muted); }
+        .chevron { font-size: 11px; color: var(--accent); transition: transform var(--transition-fast); }
         .ship-item.expanded .chevron { transform: rotate(90deg); }
-
-        .ship-item:hover {
-            border-color: rgba(0, 224, 255, 0.45);
-            transform: translateY(-1px);
-        }
 
         .ship-details {
             display: none;
             padding: 6px 10px 8px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            background: linear-gradient(
-                    130deg,
-                    rgba(7, 14, 36, 0.95),
-                    rgba(8, 24, 52, 0.95)
-            );
+            border-top: 1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(130deg, rgba(7,14,36,0.95), rgba(8,24,52,0.95));
         }
-
         .ship-item.expanded .ship-details { display: block; }
 
-        /* Styled ship snapshot box */
         .ship-stats-box {
-            border: 1px solid rgba(0, 224, 255, 0.35);
-            border-radius: 8px;
-            padding: 6px 8px;
-            margin-bottom: 6px;
-            background: radial-gradient(circle at top left,
-            rgba(0, 224, 255, 0.12),
-            rgba(3, 8, 26, 0.95));
+            border: 1px solid rgba(0,224,255,0.35);
+            border-radius: 8px; padding: 6px 8px; margin-bottom: 6px;
+            background: radial-gradient(circle at top left, rgba(0,224,255,0.12), rgba(3,8,26,0.95));
             font-size: 11px;
         }
-
-        .ship-stats-title {
-            font-weight: 600;
-            margin-bottom: 2px;
-            color: var(--accent);
-        }
-
-        .ship-stats-line {
-            margin-bottom: 2px;
-        }
-
-        .ship-stats-line:last-child {
-            margin-bottom: 0;
-        }
+        .ship-stats-title { font-weight: 600; margin-bottom: 2px; color: var(--accent); }
+        .ship-stats-line { margin-bottom: 2px; }
+        .ship-stats-line:last-child { margin-bottom: 0; }
 
         .pilot-row {
             padding: 4px 0;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+            border-bottom: 1px dashed rgba(255,255,255,0.08);
             font-size: 12px;
         }
-
         .pilot-row:last-child { border-bottom: none; }
+        .pilot-row.confirmed-pilot-row { background: rgba(0,255,136,0.03); border-radius: 4px; padding: 4px 4px; }
 
-        .pilot-top-line {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .pilot-name {
-            font-weight: 500;
-            color: var(--text-main);
-            text-decoration: none;
-        }
-
+        .pilot-top-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .pilot-name { font-weight: 500; color: var(--text-main); text-decoration: none; }
         .pilot-name:hover { color: var(--accent); text-decoration: underline; }
-
-        .pilot-alliance {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
+        .pilot-alliance { font-size: 11px; color: var(--text-muted); }
         .fit-tag {
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 999px;
-            border: 1px solid rgba(0, 224, 255, 0.4);
-            color: var(--accent);
-            background: rgba(0, 224, 255, 0.05);
+            font-size: 11px; padding: 2px 6px; border-radius: 999px;
+            border: 1px solid rgba(0,224,255,0.4);
+            color: var(--accent); background: rgba(0,224,255,0.05);
         }
-
-        .pilot-bottom-line {
-            margin-top: 2px;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
+        .pilot-bottom-line { margin-top: 2px; font-size: 11px; color: var(--text-muted); }
         .pilot-bottom-line.km-fit:hover { color: var(--accent); }
-
-        .placeholder {
-            font-style: italic;
-            color: var(--text-muted);
-        }
+        .placeholder { font-style: italic; color: var(--text-muted); }
 
         .hidden { display: none !important; }
 
         /* Resistance display */
         .resist-display {
             padding: 5px 10px 7px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(2, 5, 18, 0.55);
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            background: rgba(2,5,18,0.55);
+            display: flex; flex-direction: column; gap: 3px;
         }
-
-        .resist-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .resist-layer-label {
-            width: 46px;
-            flex-shrink: 0;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-        }
-
-        .resist-cells {
-            display: flex;
-            gap: 5px;
-            flex: 1;
-        }
-
-        .resist-cell {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            min-width: 0;
-        }
-
-        .resist-dmg-label {
-            font-size: 9px;
-            width: 20px;
-            flex-shrink: 0;
-            font-weight: 600;
-        }
-
-        .resist-bar-track {
-            flex: 1;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            min-width: 16px;
-        }
-
-        .resist-bar-fill {
-            height: 100%;
-            border-radius: 2px;
-            opacity: 0.75;
-        }
-
-        .resist-pct {
-            font-size: 9px;
-            width: 22px;
-            text-align: right;
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
-
-        .resist-loading {
-            font-size: 10px;
-            color: var(--text-muted);
-            font-style: italic;
-            padding: 2px 0;
-        }
+        .resist-row { display: flex; align-items: center; gap: 8px; }
+        .resist-layer-label { width: 46px; flex-shrink: 0; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
+        .resist-cells { display: flex; gap: 5px; flex: 1; }
+        .resist-cell { flex: 1; display: flex; align-items: center; gap: 3px; min-width: 0; }
+        .resist-dmg-label { font-size: 9px; width: 20px; flex-shrink: 0; font-weight: 600; }
+        .resist-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; min-width: 16px; }
+        .resist-bar-fill { height: 100%; border-radius: 2px; opacity: 0.75; }
+        .resist-pct { font-size: 9px; width: 22px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
+        .resist-loading { font-size: 10px; color: var(--text-muted); font-style: italic; padding: 2px 0; }
 
         @media (max-width: 880px) {
             body { padding: 12px; }
@@ -501,7 +396,7 @@
     <header class="app-header">
         <div class="app-title">
             <h1>Who's in Space?</h1>
-            <span>Match ships on dscan to pilots in local!</span>
+            <span>Match ships on dscan to pilots in local! Tool works best if there are not too many people in local as that would create ambiguity and less-helpful results</span>
         </div>
         <button id="newScanBtn" class="primary-btn">
             <span class="icon">⟳</span> New Scan
@@ -509,7 +404,6 @@
     </header>
 
     <div class="app-body">
-        <!-- INITIAL: 3 paste panes -->
         <section id="inputPanel" class="input-panel">
             <div class="input-row">
                 <article class="paste-card">
@@ -519,10 +413,7 @@
                             <div class="paste-sub">D-scan → Ctrl+A → Ctrl+C</div>
                         </div>
                     </div>
-                    <textarea
-                            id="dscanInput"
-                            placeholder="Paste d-scan here"
-                    ></textarea>
+                    <textarea id="dscanInput" placeholder="Paste d-scan here"></textarea>
                 </article>
 
                 <article class="paste-card">
@@ -532,24 +423,61 @@
                             <div class="paste-sub">Local List → Ctrl+A → Ctrl+C</div>
                         </div>
                     </div>
-                    <textarea
-                            id="guestInput"
-                            placeholder="Paste local list here"
-                    ></textarea>
+                    <textarea id="guestInput" placeholder="Paste local list here"></textarea>
                 </article>
 
-                <article class="paste-card">
-                    <div class="paste-header">
-                        <div>
-                            <div class="paste-title">Docked Pilots</div>
-                            <div class="paste-sub">Guest List → Ctrl+A → Ctrl+C</div>
+                <div class="station-col">
+                    <article class="paste-card">
+                        <div class="paste-header">
+                            <div>
+                                <div class="paste-title">Docked Pilots</div>
+                                <div class="paste-sub">Guest List → Ctrl+A → Ctrl+C</div>
+                            </div>
                         </div>
-                    </div>
-                    <textarea
-                            id="stationInput"
-                            placeholder="Recommended: Paste station guest list here (Analyzing will take longer if there are many ships or undocked characters)"
-                    ></textarea>
-                </article>
+                        <textarea id="stationInput" placeholder="Recommended: Paste station guest list here"></textarea>
+                    </article>
+
+                    <!-- Screenshot card -->
+                    <article class="screenshot-card">
+                        <div class="screenshot-header">
+                            <div>
+                                <div class="paste-title">Killmail Screenshot</div>
+                                <div class="paste-sub">Ctrl+V · drag &amp; drop · click to upload</div>
+                            </div>
+                            <button class="clear-ss-btn hidden" id="clearSsBtn">✕ Clear</button>
+                        </div>
+
+                        <div class="screenshot-drop-zone" id="screenshotZone">
+                            <div class="screenshot-placeholder" id="ssPlaceholder">
+                                <span class="ss-icon">📷</span>
+                                <span>Paste a killmail screenshot</span>
+                                <span class="ss-hint">zKillboard, in-game kill report, etc.</span>
+                            </div>
+                            <div class="screenshot-preview" id="ssPreview">
+                                <img id="ssImg" alt="Pasted screenshot" />
+                            </div>
+                        </div>
+
+                        <div class="ocr-status" id="ocrStatus">
+                            <div class="ocr-spinner"></div>
+                            <span id="ocrStatusText">Reading screenshot…</span>
+                        </div>
+
+                        <div class="confirmed-preview" id="confirmedPreview">
+                            <div class="confirmed-preview-label">Extracted from screenshot</div>
+                            <div id="confirmedPreviewList"></div>
+                        </div>
+
+                        <details id="ocrDebugWrap" style="display:none;margin-top:6px;">
+                            <summary style="cursor:pointer;font-size:11px;color:var(--muted);user-select:none;">OCR raw text (debug)</summary>
+                            <textarea id="ocrDebugText" readonly
+                                style="width:100%;height:120px;margin-top:4px;font-size:10px;
+                                       font-family:monospace;background:var(--bg-card);
+                                       color:var(--muted);border:1px solid var(--border);
+                                       border-radius:4px;padding:4px;resize:vertical;box-sizing:border-box;"></textarea>
+                        </details>
+                    </article>
+                </div>
             </div>
 
             <div class="analyze-row">
@@ -559,15 +487,13 @@
             </div>
         </section>
 
-        <!-- RESULTS: ships dropdown list only -->
         <section id="shipsPanel" class="ships-panel">
             <div class="ships-header">
-                <h2>Ships on D-Scan</h2>
+                <h2 id="shipsPanelTitle">Ships on D-Scan</h2>
                 <span id="shipsMeta" class="pill">0 ships</span>
             </div>
-            <div class="ships-hint">
-                Click any ship to see possible pilots, their alliance, and their
-                recently lost fits (placeholders; real data later from ESI/zkill).
+            <div class="ships-hint" id="shipsHint">
+                Click any ship to see possible pilots, their alliance, and recently lost fits.
             </div>
             <ul id="shipList" class="ship-list"></ul>
         </section>
@@ -575,445 +501,1053 @@
 </div>
 
 <script>
-    // --- Parsing helpers ----------------------------------------------------
+// ── EVE ship type vocabulary for OCR recognition ────────────────────────────
+const EVE_SHIPS = [
+    // T1 Frigates
+    'Executioner','Inquisitor','Crucifer','Magnate','Punisher','Tormentor',
+    'Bantam','Condor','Griffin','Kestrel','Merlin','Heron',
+    'Atron','Imicus','Incursus','Maulus','Navitas','Tristan',
+    'Breacher','Burst','Probe','Rifter','Slasher','Vigil',
+    // Pirate / Navy Frigates
+    'Dramiel','Daredevil','Worm','Succubus','Cruor',
+    'Slicer','Comet','Firetail','Hookbill',
+    // T2 Frigates – Interceptors
+    'Crow','Malediction','Ares','Stiletto','Raptor','Taranis','Crusader','Claw',
+    // T2 Frigates – Assault
+    'Harpy','Hawk','Enyo','Ishkur','Retribution','Vengeance','Wolf','Jaguar',
+    // T2 Frigates – Covert Ops
+    'Buzzard','Cheetah','Helios','Anathema',
+    // T2 Frigates – Electronic Attack
+    'Kitsune','Keres','Hyena','Sentinel',
+    // T2 Frigates – Logistics
+    'Deacon','Kirin','Thalia','Scalpel',
+    // Triglavian Frigates
+    'Damavik','Nergal',
+    // T1 Destroyers
+    'Catalyst','Coercer','Corax','Cormorant','Algos','Dragoon','Thrasher','Talwar',
+    // T2 Destroyers – Interdictors
+    'Flycatcher','Sabre','Heretic','Eris',
+    // T2 Destroyers – Command Destroyers
+    'Stork','Magus','Bifrost','Pontifex',
+    // Triglavian Destroyers
+    'Kikimora','Draugur',
+    // EDENCOM Frigates / Destroyers
+    'Skybreaker','Thunderchild',
+    // T3 Destroyers
+    'Jackdaw','Confessor','Svipul','Hecate',
+    // T1 Cruisers
+    'Arbitrator','Augoror','Maller','Omen',
+    'Blackbird','Caracal','Moa','Osprey',
+    'Celestis','Exequror','Thorax','Vexor',
+    'Bellicose','Rupture','Scythe','Stabber',
+    // Heavy Assault Cruisers
+    'Eagle','Cerberus','Deimos','Ishtar','Zealot','Sacrilege','Muninn','Vagabond',
+    // Heavy Interdictors
+    'Broadsword','Phobos','Devoter','Onyx',
+    // Logistics Cruisers
+    'Guardian','Basilisk','Oneiros','Scimitar',
+    // Triglavian Cruisers
+    'Vedmak','Ikitursa','Rodiva',
+    // EDENCOM Cruiser
+    'Stormbringer',
+    // Recon Cruisers
+    'Falcon','Rook','Arazu','Lachesis','Pilgrim','Curse','Rapier','Huginn',
+    // T3 Cruisers
+    'Tengu','Proteus','Loki','Legion',
+    // Pirate / SoE Cruisers
+    'Cynabal','Phantasm','Vigilant','Gila','Ashimmu','Stratios',
+    // Triglavian Battlecruisers
+    'Drekavac',
+    // Battlecruisers
+    'Drake','Ferox','Brutix','Myrmidon','Hurricane','Cyclone','Harbinger','Prophecy',
+    // Command Ships
+    'Sleipnir','Claymore','Astarte','Eos','Vulture','Nighthawk','Damnation','Absolution',
+    // Triglavian Battleships
+    'Leshak',
+    // Battleships
+    'Raven','Scorpion','Hyperion','Megathron','Maelstrom','Tempest','Armageddon','Apocalypse',
+    // Marauders
+    'Golem','Kronos','Vargur','Paladin',
+    // Pirate Battleships
+    'Machariel','Vindicator','Nightmare','Rattlesnake','Bhaalgorn','Barghest',
+    // Black Ops Battleships
+    'Widow','Redeemer','Sin','Panther',
+    // Misc / SoE / Special
+    'Venture','Astero','Gnosis','Praxis',
+    // ── Faction / Navy / Fleet / Imperial / Tribal variants ──────────────────
+    // Faction Frigates
+    'Imperial Navy Slicer','Federation Navy Comet','Republic Fleet Firetail','Caldari Navy Hookbill',
+    'Crucifier Navy Issue','Magnate Navy Issue','Griffin Navy Issue','Maulus Navy Issue','Vigil Fleet Issue',
+    // Navy exploration frigates (Uprising expansion)
+    'Imicus Navy Issue','Heron Navy Issue','Probe Fleet Issue', 
+    // Faction Destroyers
+    'Coercer Navy Issue','Cormorant Navy Issue','Thrasher Fleet Issue','Catalyst Navy Issue',
+    // Faction Cruisers
+    'Omen Navy Issue','Caracal Navy Issue','Vexor Navy Issue','Stabber Fleet Issue',
+    // Navy logistics / support cruisers (Uprising expansion)
+    'Osprey Navy Issue','Augoror Navy Issue','Exequror Navy Issue','Scythe Fleet Issue',
+    // Faction Battlecruisers
+    'Drake Navy Issue','Ferox Navy Issue','Brutix Navy Issue','Hurricane Fleet Issue',
+    'Harbinger Navy Issue','Cyclone Fleet Issue','Myrmidon Navy Issue','Prophecy Navy Issue',
+    // Faction Battleships
+    'Raven Navy Issue','Scorpion Navy Issue',
+    'Megathron Navy Issue','Dominix Navy Issue',
+    'Apocalypse Navy Issue','Armageddon Navy Issue',
+    'Tempest Fleet Issue','Typhoon Fleet Issue',
+];
+const EVE_SHIPS_SET = new Set(EVE_SHIPS.map(s => s.toLowerCase()));
 
-    // Parse D-scan: split by tabs, use 3rd last column as name, 2nd last as type.
-    function parseDscan(text) {
-        const lines = text
-            .split(/\r?\n/)
-            .map((l) => l.trim())
-            .filter((l) => l.length > 0);
+// Words that appear in OCR text but are never EVE pilot names
+const OCR_NAME_BLOCKLIST = new Set([
+    'kill','kills','loss','losses','report','zkillboard','victim','attacker','attackers',
+    'destroyed','dropped','ship','system','location','region','security','corporation',
+    'alliance','faction','total','value','isk','damage','points','npc','solo','info',
+    'time','date','war','fleet','wing','squad','gate','station','citadel','structure',
+    'highsec','lowsec','nullsec','wormhole','pod','capsule','final','blow','involved',
+    'parties','related','unknown','loading','eve','online','killmail','zkill',
+    'implants','modules','items','cargo','drones','fitting','details','overview',
+    'involved','parties','security','status','solar','class','type','group',
+    'km','kms',
+]);
 
-        const ignorePatterns = /(depot|tractor|capsule|shuttle|scanner)/i;
-        const ships = [];
+// Rookie / irrelevant ships to hide from results
+const ROOKIE_SHIPS = new Set(['reaper','ibis','velator','impairor','capsule','corvette','shuttle']);
 
-        for (const line of lines) {
-            const cols = line.split("\t").map(c => c.trim()).filter(c => c.length > 0);
-            if (cols.length < 2) continue;
+// ── Faction detection for pilot row colouring ────────────────────────────────
+// Keyed lists of lowercase keywords found in alliance/corp names
+const FACTION_KEYS = {
+    amarr:    ['amarr','khanid','imperial','sarum','tash-murkon','ardishapur','kor-azor','24th imperial','reclaiming','order of st'],
+    minmatar: ['minmatar','republic','tribal','brutor','sebiestor','krusual','vherokior','nefantar','starkmanir','liberation force','tribal liberation'],
+    caldari:  ['caldari','state protectorate','kaalakiota','lai dai','wiyrkomi','hyasyoda','nugoeihuvi','sukuuvesta','ishukone','mercantile club'],
+    gallente: ['gallente','federation navy','federal defense union','roden','duvolle','innovia','core freedom','fd-u'],
+    angel:    ['angel cartel','dominations','archangels','thukker tribe'],
+    guristas: ['guristas','fatal','pithum','pithatis'],
+};
+const FACTION_BG = {
+    amarr:    'rgba(255, 210, 30,  0.22)',
+    minmatar: 'rgba(210, 50,  50,  0.22)',
+    caldari:  'rgba(50,  130, 255, 0.22)',
+    gallente: 'rgba(40,  200, 80,  0.22)',
+    angel:    'rgba(255, 130, 20,  0.22)',
+    guristas: 'rgba(0,   210, 195, 0.22)',
+};
 
-            const shipType = cols[cols.length - 2];
-            if (!shipType) continue;
-            if (ignorePatterns.test(shipType)) continue;
-
-            const shipName = cols[cols.length - 3];
-            const hasDashFlag = cols[cols.length - 1] === "-";
-
-            ships.push({
-                shipType,
-                shipName,
-                hasDashFlag
-            });
-        }
-        return ships;
+function detectFaction(allianceName, corpName) {
+    const text = ((allianceName || '') + ' ' + (corpName || '')).toLowerCase().trim();
+    for (const [faction, keys] of Object.entries(FACTION_KEYS)) {
+        if (keys.some(k => text.includes(k))) return faction;
     }
+    if (text) console.log('[faction] no match — corp/alliance:', JSON.stringify(text));
+    return null;
+}
+function factionBg(allianceName, corpName) {
+    const f = detectFaction(allianceName, corpName);
+    return f ? FACTION_BG[f] : null;
+}
 
-    // Parse local / guest list into full pilot names.
-    function parsePilotsBlock(text) {
-        return text
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
-    }
+// ── ESI / zKillboard enrichment for OCR-confirmed pilots ────────────────────
+const ESI_BASE = 'https://esi.evetech.net/latest';
+const ZKB_BASE = 'https://zkillboard.com/api';
 
-    // Parse docked list to a Set.
-    function parseDockedBlock(text) {
-        return new Set(parsePilotsBlock(text));
-    }
+// EVE faction IDs → faction key (maps to FACTION_BG)
+const FACTION_ID_TO_KEY = {
+    500001: 'caldari',
+    500002: 'minmatar',
+    500003: 'amarr',
+    500004: 'gallente',
+    500010: 'angel',
+    500011: 'guristas',
+};
 
-    // Build placeholder per-ship pilot entries (docked filtered out).
-    function buildPilotsForShip(shipType, allPilots, dockedSet) {
-        const activePilots = allPilots.filter((p) => !dockedSet.has(p));
-        return activePilots.map((name) => {
-            const alliance = "ALLIANCE-X"; // placeholder
-            return {
-                name,
-                alliance,
-                recentLossSummary: `Recently lost ${shipType} fit (placeholder)`,
-                recentLossWhen: "Last loss: 3 days ago (placeholder)",
-                fitShort:
-                    "Rails / AB / Scram / Web / Damage Control (full fit from zkill – placeholder)",
-            };
-        });
-    }
+// ESI killmail item flag → fitting slot label
+function flagToSlot(flag) {
+    if (flag >= 27 && flag <= 34) return 'Hi';
+    if (flag >= 19 && flag <= 26) return 'Med';
+    if (flag >= 11 && flag <= 18) return 'Low';
+    if (flag >= 92 && flag <= 99) return 'Rig';
+    if (flag >= 125 && flag <= 132) return 'Sub';
+    if (flag === 87) return 'Drones';
+    return null;
+}
 
-    // --- Rendering ----------------------------------------------------------
+async function enrichConfirmedPilots(pilots) {
+    if (!pilots.length) return pilots;
 
-    function renderShips(ships, pilots, dockedSet) {
-        const listEl = document.getElementById("shipList");
-        listEl.innerHTML = "";
+    // Batch-resolve all pilot names + ship type names via ESI in one call
+    const pilotNames = [...new Set(pilots.map(p => p.pilotName).filter(Boolean))];
+    const shipNames  = [...new Set(pilots.map(p => p.shipType).filter(Boolean))];
+    const allNames   = [...new Set([...pilotNames, ...shipNames])];
 
-        const meta = document.getElementById("shipsMeta");
-        const activePilots = pilots.filter((p) => !dockedSet.has(p));
-        meta.textContent =
-            ships.length +
-            " ships | " +
-            activePilots.length +
-            " pilots in space (docked removed)";
-
-        ships.forEach((ship, index) => {
-            const li = document.createElement("li");
-            li.className = "ship-item";
-            li.dataset.index = index;
-
-            const header = document.createElement("div");
-            header.className = "ship-item-header";
-
-            const main = document.createElement("div");
-            main.className = "ship-main";
-
-            const nameRow = document.createElement("div");
-            nameRow.className = "ship-name-row";
-
-            const chevron = document.createElement("span");
-            chevron.className = "chevron";
-            chevron.textContent = "▶";
-
-            const nameContainer = document.createElement("span");
-            nameContainer.className = "ship-name-text";
-
-            const titleSpan = document.createElement("span");
-            const shipTitle = `${ship.shipName || "(unknown)"} - ${ship.shipType || "(unknown hull)"}`;
-            titleSpan.textContent = shipTitle;
-            nameContainer.appendChild(titleSpan);
-
-            // Inline warning next to name if last token was not "-"
-            if (!ship.hasDashFlag) {
-                const warnSpan = document.createElement("span");
-                warnSpan.className = "ship-warning";
-                warnSpan.textContent = "Warning! This ship is on grid with you!";
-                nameContainer.appendChild(warnSpan);
-            }
-
-            nameRow.appendChild(chevron);
-            nameRow.appendChild(nameContainer);
-            main.appendChild(nameRow);
-
-            const count = document.createElement("span");
-            count.className = "ship-count";
-            count.textContent =
-                activePilots.length > 0
-                    ? activePilots.length + " possible pilots"
-                    : "No pilots in space";
-
-            header.appendChild(main);
-            header.appendChild(count);
-
-            const details = document.createElement("div");
-            details.className = "ship-details";
-
-            if (ship.stats) {
-                const s = ship.stats;
-                const statsBox = document.createElement("div");
-                statsBox.className = "ship-stats-box";
-                statsBox.innerHTML = `
-                    <div class="ship-stats-title">${ship.shipName}</div>
-                    <div class="ship-stats-line">
-                        <span style="color:#7ecfff">Shield:</span>
-                        EM ${s.shieldResists.em}% &nbsp;/&nbsp;
-                        Therm ${s.shieldResists.therm}% &nbsp;/&nbsp;
-                        Kin ${s.shieldResists.kin}% &nbsp;/&nbsp;
-                        Exp ${s.shieldResists.exp}%
-                    </div>
-                    <div class="ship-stats-line">
-                        <span style="color:#ffb36b">Armor:</span>
-                        EM ${s.armorResists.em}% &nbsp;/&nbsp;
-                        Therm ${s.armorResists.therm}% &nbsp;/&nbsp;
-                        Kin ${s.armorResists.kin}% &nbsp;/&nbsp;
-                        Exp ${s.armorResists.exp}%
-                    </div>
-                    <div class="ship-stats-line">
-                        <span style="color:var(--text-muted)">Slots:</span>
-                        ${s.slots.high}H / ${s.slots.mid}M / ${s.slots.low}L / ${s.slots.rig} Rigs
-                    </div>
-                `;
-                details.appendChild(statsBox);
-            }
-
-            // Ship snapshot (styled, with separate armor/shield resists and no rigs).
-            const statsBox = document.createElement("div");
-            statsBox.className = "ship-stats-box";
-
-            const statsTitle = document.createElement("div");
-            statsTitle.className = "ship-stats-title";
-            statsTitle.textContent = "Important Ship Details";
-            statsBox.appendChild(statsTitle);
-
-            const shieldLine = document.createElement("div");
-            shieldLine.className = "ship-stats-line";
-            shieldLine.textContent =
-                "Shield Resists: EM 0% / Therm 20% / Kin 40% / Expl 50% (placeholder)";
-            statsBox.appendChild(shieldLine);
-
-            const armorLine = document.createElement("div");
-            armorLine.className = "ship-stats-line";
-            armorLine.textContent =
-                "Armor Resists: EM 50% / Therm 35% / Kin 25% / Expl 10% (placeholder)";
-            statsBox.appendChild(armorLine);
-
-            const bonusLine = document.createElement("div");
-            bonusLine.className = "ship-stats-line";
-            bonusLine.textContent =
-                "Bonuses: +5% weapon damage / +7.5% tracking / +10% web strength (placeholder)";
-            statsBox.appendChild(bonusLine);
-
-            const slotsLine = document.createElement("div");
-            slotsLine.className = "ship-stats-line";
-            slotsLine.textContent =
-                "Slots: 4 High / 3 Mid / 3 Low (placeholder)";
-            statsBox.appendChild(slotsLine);
-
-            details.appendChild(statsBox);
-
-            const shipPilots = buildPilotsForShip(
-                ship.shipType,
-                pilots,
-                dockedSet
-            );
-
-            if (shipPilots.length === 0) {
-                const p = document.createElement("div");
-                p.className = "pilot-bottom-line placeholder";
-                p.textContent =
-                    "No non-docked pilots matched in local for this ship. Being undocked is scary.";
-                details.appendChild(p);
-            } else {
-                shipPilots.forEach((p) => {
-                    const row = document.createElement("div");
-                    row.className = "pilot-row";
-
-                    const top = document.createElement("div");
-                    top.className = "pilot-top-line";
-                    const left = document.createElement("div");
-                    left.innerHTML =
-                        '<span class="pilot-name">' +
-                        p.name +
-                        "</span>" +
-                        ' <span class="pilot-alliance">[' +
-                        p.alliance +
-                        "]</span>";
-                    const tag = document.createElement("span");
-                    tag.className = "fit-tag";
-                    tag.textContent = "Recently lost fit (placeholder)";
-                    top.appendChild(left);
-                    top.appendChild(tag);
-
-                    const bottom = document.createElement("div");
-                    bottom.className = "pilot-bottom-line";
-                    bottom.textContent =
-                        p.recentLossWhen + " – " + p.fitShort + " (from zkill/ESI).";
-
-                    row.appendChild(top);
-                    row.appendChild(bottom);
-                    details.appendChild(row);
-                });
-            }
-
-            li.appendChild(header);
-            li.appendChild(details);
-
-            header.addEventListener("click", () => {
-                li.classList.toggle("expanded");
-            });
-
-            listEl.appendChild(li);
-        });
-    }
-
-    // --- State transitions --------------------------------------------------
-
-    async function handleAnalyze() {
-        const dscanText = document.getElementById("dscanInput").value.trim();
-        const guestText = document.getElementById("guestInput").value.trim();
-        const stationText = document.getElementById("stationInput").value.trim();
-
-        // Show loading state
-        const btn = document.getElementById("analyzeBtn");
-        btn.textContent = "Analyzing...";
-        btn.disabled = true;
-
+    const nameMap = new Map(); // lowercase name → numeric ESI id
+    if (allNames.length) {
         try {
-            const response = await fetch("http://localhost:3001/analyze", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    localPaste: guestText,
-                    dscanPaste: dscanText,
-                    stationPaste: stationText
-                })
+            const res  = await fetch(`${ESI_BASE}/universe/ids/?datasource=tranquility`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(allNames)
             });
-
-            if (!response.ok) throw new Error("Backend error: " + response.status);
-
-            const data = await response.json();
-            renderResults(data);
-
-            document.getElementById("inputPanel").classList.add("hidden");
-            document.getElementById("shipsPanel").style.display = "flex";
-
-        } catch (err) {
-            alert("Error connecting to backend: " + err.message + "\n\nMake sure the backend is running (npm run dev).");
-        } finally {
-            btn.innerHTML = '<span class="icon">✦</span> Analyze';
-            btn.disabled = false;
-        }
+            const data = await res.json();
+            (data.characters      || []).forEach(c => nameMap.set(c.name.toLowerCase(), c.id));
+            (data.inventory_types || []).forEach(t => nameMap.set(t.name.toLowerCase(), t.id));
+        } catch (e) { console.warn('[enrich] ESI /universe/ids/ failed:', e); }
     }
 
-    function handleNewScan() {
-        document.getElementById("dscanInput").value = "";
-        document.getElementById("guestInput").value = "";
-        document.getElementById("stationInput").value = "";
-        document.getElementById("shipList").innerHTML = "";
-        document.getElementById("shipsMeta").textContent = "0 ships";
+    return await Promise.all(pilots.map(async pilot => {
+        const enriched = { ...pilot };
 
-        document.getElementById("shipsPanel").style.display = "none";
-        document.getElementById("inputPanel").classList.remove("hidden");
+        const charId = pilot.pilotName ? nameMap.get(pilot.pilotName.toLowerCase()) : null;
+        if (!charId) { enriched.charLookupFailed = true; return enriched; }
+        enriched.charId = charId;
+
+        const shipTypeId = pilot.shipType ? nameMap.get(pilot.shipType.toLowerCase()) : null;
+        if (shipTypeId) enriched.shipTypeId = shipTypeId;
+
+        // Parallel: character info (for factionId) + recent losses in this ship type
+        const [charResult, lossResult] = await Promise.allSettled([
+            fetch(`${ESI_BASE}/characters/${charId}/`).then(r => r.json()),
+            shipTypeId
+                ? fetch(`${ZKB_BASE}/losses/characterID/${charId}/shipTypeID/${shipTypeId}/`).then(r => r.json())
+                : Promise.resolve([])
+        ]);
+
+        if (charResult.status === 'fulfilled' && charResult.value?.faction_id) {
+            enriched.factionId = charResult.value.faction_id;
+        }
+
+        if (lossResult.status === 'fulfilled' && Array.isArray(lossResult.value) && lossResult.value.length) {
+            const km = lossResult.value[0]; // most recent loss
+            try {
+                const kmDetail = await fetch(
+                    `${ESI_BASE}/killmails/${km.killmail_id}/${km.zkb.hash}/`
+                ).then(r => r.json());
+
+                // Resolve type IDs → names
+                const items   = kmDetail.victim?.items || [];
+                const typeIds = [...new Set(items.map(i => i.item_type_id))];
+                const typeNames = new Map();
+                if (typeIds.length) {
+                    try {
+                        const nr = await fetch(`${ESI_BASE}/universe/names/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(typeIds)
+                        });
+                        (await nr.json()).forEach(n => typeNames.set(n.id, n.name));
+                    } catch (e) {}
+                }
+
+                // Group into fitting slots
+                const fitting = {};
+                for (const item of items) {
+                    const slot = flagToSlot(item.flag);
+                    if (!slot) continue;
+                    if (!fitting[slot]) fitting[slot] = [];
+                    const qty  = (item.quantity_destroyed || 0) + (item.quantity_dropped || 0) || 1;
+                    const name = typeNames.get(item.item_type_id) || `[${item.item_type_id}]`;
+                    fitting[slot].push(qty > 1 ? `${name} x${qty}` : name);
+                }
+
+                enriched.recentLoss = {
+                    killmailId:   km.killmail_id,
+                    killmailTime: kmDetail.killmail_time,
+                    totalValue:   km.zkb.totalValue,
+                    fitting
+                };
+            } catch (e) { console.warn('[enrich] killmail detail failed:', e); }
+        }
+
+        return enriched;
+    }));
+}
+
+// ── Screenshot / OCR state ───────────────────────────────────────────────────
+let screenshotDataUrl = null;
+let confirmedPilots   = []; // [{pilotName, shipType, dateLost, valueISK}]
+let ocrRunning        = false;
+
+// ── Paste anywhere on the page to capture an image ──────────────────────────
+document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items || [];
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = ev => setScreenshot(ev.target.result);
+            reader.readAsDataURL(blob);
+            return;
+        }
+    }
+});
+
+// Drag & drop into screenshot zone
+const ssZone = document.getElementById('screenshotZone');
+ssZone.addEventListener('dragover', e => { e.preventDefault(); ssZone.classList.add('drag-over'); });
+ssZone.addEventListener('dragleave', () => ssZone.classList.remove('drag-over'));
+ssZone.addEventListener('drop', e => {
+    e.preventDefault();
+    ssZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = ev => setScreenshot(ev.target.result);
+        reader.readAsDataURL(file);
+    }
+});
+// Click zone to open file picker
+ssZone.addEventListener('click', () => {
+    if (screenshotDataUrl) return; // already has image
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => setScreenshot(ev.target.result);
+        reader.readAsDataURL(file);
+    };
+    input.click();
+});
+
+document.getElementById('clearSsBtn').addEventListener('click', clearScreenshot);
+
+function setScreenshot(dataUrl) {
+    screenshotDataUrl = dataUrl;
+    document.getElementById('ssImg').src = dataUrl;
+    document.getElementById('ssPlaceholder').style.display = 'none';
+    document.getElementById('ssPreview').style.display   = 'block';
+    ssZone.classList.add('has-image');
+    document.getElementById('clearSsBtn').classList.remove('hidden');
+    runOCR(dataUrl);
+}
+
+function clearScreenshot() {
+    screenshotDataUrl = null;
+    confirmedPilots   = [];
+    document.getElementById('ssImg').src = '';
+    document.getElementById('ssPlaceholder').style.display = 'flex';
+    document.getElementById('ssPreview').style.display   = 'none';
+    ssZone.classList.remove('has-image');
+    document.getElementById('clearSsBtn').classList.add('hidden');
+    document.getElementById('ocrStatus').style.display       = 'none';
+    document.getElementById('confirmedPreview').style.display = 'none';
+    document.getElementById('ocrDebugWrap').style.display     = 'none';
+}
+
+// ── OCR ──────────────────────────────────────────────────────────────────────
+async function runOCR(dataUrl) {
+    const statusEl  = document.getElementById('ocrStatus');
+    const statusTxt = document.getElementById('ocrStatusText');
+    statusEl.style.display = 'flex';
+    statusTxt.textContent  = 'Loading OCR engine…';
+    ocrRunning = true;
+
+    try {
+        if (!window.Tesseract) await loadScript('https://unpkg.com/tesseract.js@5.0.4/dist/tesseract.min.js');
+
+        const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng', {
+            logger: m => {
+                if (m.status === 'recognizing text')
+                    statusTxt.textContent = `OCR ${Math.round(m.progress * 100)}%…`;
+            }
+        });
+
+        statusTxt.textContent = 'Parsing EVE data…';
+        console.group('[OCR] Raw Tesseract output');
+        console.log(text);
+        console.groupEnd();
+
+        // Show raw OCR text in the debug panel
+        const dbgWrap = document.getElementById('ocrDebugWrap');
+        const dbgText = document.getElementById('ocrDebugText');
+        if (dbgWrap && dbgText) {
+            dbgWrap.style.display = '';
+            dbgText.value = text;
+        }
+
+        const localPilots = parsePilotsBlock(document.getElementById('guestInput').value);
+        confirmedPilots   = parseEVEText(text, localPilots);
+        console.log('[OCR] parseEVEText results:', JSON.stringify(confirmedPilots, null, 2));
+
+        // Enrich with charId, factionId, and recent fit data via ESI / zKillboard
+        statusTxt.textContent = 'Looking up pilots…';
+        confirmedPilots = await enrichConfirmedPilots(confirmedPilots);
+        console.log('[OCR] enriched:', JSON.stringify(confirmedPilots, null, 2));
+        renderConfirmedPreview(confirmedPilots);
+    } catch (err) {
+        statusTxt.textContent = 'OCR failed: ' + err.message;
+        ocrRunning = false;
+        return;
     }
 
-    document
-        .getElementById("analyzeBtn")
-        .addEventListener("click", handleAnalyze);
-    document
-        .getElementById("newScanBtn")
-        .addEventListener("click", handleNewScan);
+    ocrRunning = false;
+    statusEl.style.display = 'none';
+}
 
-    document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "Enter") {
-            handleAnalyze();
-        }
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
     });
-    // --- Resistance display (uses stats returned by the backend) --------------
+}
 
-    function buildResistDisplay(stats) {
-        const div = document.createElement("div");
-        div.className = "resist-display";
+// ── Parse OCR text for EVE pilot + ship data ─────────────────────────────────
+//
+// Expected OCR format (in-game overview / d-scan window):
+//   [icon garbage] [N] km [Pilot Name] [Ship Type] [number/garbage]
+//
+// Both pilot and ship are on the SAME line. We find the ship type within the
+// line, then extract the text before it (after stripping the distance prefix)
+// as the pilot name.
+//
+function parseEVEText(rawText, knownPilots = []) {
+    const results = [];
+    const lines   = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
-        if (!stats) {
-            div.innerHTML = '<div class="resist-loading">No resistance data for this hull</div>';
-            return div;
+    // Sort ships by name length descending so "Caracal Navy Issue" is checked
+    // before "Caracal", preventing short names from shadowing longer ones.
+    const sortedShips = [...EVE_SHIPS].sort((a, b) => b.length - a.length);
+
+    const valueISK = extractISK(rawText);
+    const dateLost = extractDate(rawText);
+
+    console.log('[parseEVEText] lines:', lines);
+    console.log('[parseEVEText] knownPilots:', knownPilots);
+
+    for (const line of lines) {
+        // ── Step 1: find the ship type present on this line ──────────────────
+
+        let matchedShip = null;
+        let shipIdx     = -1;
+
+        // Exact word-boundary match (longest ship name wins)
+        for (const ship of sortedShips) {
+            const m = new RegExp(`\\b${escapeRegex(ship)}\\b`, 'i').exec(line);
+            if (m) { matchedShip = ship; shipIdx = m.index; break; }
         }
 
-        const layers = [
-            { resists: stats.shieldResists, label: 'Shield', color: '#7ecfff' },
-            { resists: stats.armorResists,  label: 'Armor',  color: '#ffb36b' },
-            { resists: stats.hullResists,   label: 'Hull',   color: '#8fa4c0' },
-        ];
-        const dmg = [
-            { key: 'em',    label: 'EM', color: '#e8d44a' },
-            { key: 'therm', label: 'Th', color: '#ff6535' },
-            { key: 'kin',   label: 'Ki', color: '#4ab4ff' },
-            { key: 'exp',   label: 'Ex', color: '#ff9c35' },
-        ];
+        // Partial prefix match — handles OCR clipping the last word.
+        // e.g. line has "Caracal Navy | e" → matched to "Caracal Navy Issue"
+        if (!matchedShip) {
+            outer: for (const ship of sortedShips) {
+                const words = ship.split(' ');
+                if (words.length < 2) continue;
+                for (let take = words.length - 1; take >= 2; take--) {
+                    const prefix = words.slice(0, take).join(' ');
+                    const m = new RegExp(`\\b${escapeRegex(prefix)}\\b`, 'i').exec(line);
+                    if (m) { matchedShip = ship; shipIdx = m.index; break outer; }
+                }
+            }
+        }
 
-        div.innerHTML = layers.map(l => `
-            <div class="resist-row">
-                <span class="resist-layer-label" style="color:${l.color}">${l.label}</span>
-                <div class="resist-cells">${dmg.map(d => `
-                    <div class="resist-cell">
-                        <span class="resist-dmg-label" style="color:${d.color}">${d.label}</span>
-                        <div class="resist-bar-track">
-                            <div class="resist-bar-fill" style="width:${l.resists[d.key]}%;background:${d.color}"></div>
-                        </div>
-                        <span class="resist-pct">${l.resists[d.key]}%</span>
-                    </div>`).join('')}
-                </div>
-            </div>`).join('');
+        if (!matchedShip || shipIdx === -1) continue;
 
+        // ── Step 2: extract pilot name from text BEFORE the ship type ────────
+
+        const beforeShip = line.slice(0, shipIdx).trim();
+        if (!beforeShip) continue;
+
+        // Distance prefix: "[garbage] [N] <unit> [Pilot Name]"
+        // Units: "km" (close range), "k" (OCR drop of m), "m" (meters when far away)
+        // No ^ anchor — garbage/quotes can precede the digits.
+        let pilotName = null;
+        const distMatch = beforeShip.match(/\d+\W*(km|k|m)\W*([A-Za-z].*)$/i);
+        if (distMatch) {
+            pilotName = distMatch[2].trim();
+        } else {
+            // Fallback A: OCR garbled the digits (e.g. "AL m …", "AL km …")
+            // Look for a standalone unit token and take what follows.
+            const unitOnlyMatch = beforeShip.match(/\b(km|m)\W*([A-Za-z].*)$/i);
+            if (unitOnlyMatch) {
+                pilotName = unitOnlyMatch[2].trim();
+            } else {
+                // Fallback B: strip leading non-alpha junk
+                pilotName = beforeShip.replace(/^[^A-Za-z]+/, '').trim();
+            }
+        }
+
+        if (!pilotName || pilotName.length < 2) continue;
+
+        // Strip trailing OCR noise: periods, brackets, parens, colons, etc.
+        pilotName = pilotName.replace(/[^A-Za-z0-9\s'\-]+$/, '').trim();
+
+        if (!pilotName || pilotName.length < 2) continue;
+
+        // Strip leading OCR noise that survived (e.g. "@Mark" → "Mark")
+        if (!(/^[A-Za-z]/.test(pilotName))) {
+            pilotName = pilotName.replace(/^[^A-Za-z]+/, '').trim();
+            if (!pilotName || pilotName.length < 2) continue;
+        }
+        if (OCR_NAME_BLOCKLIST.has(pilotName.toLowerCase())) continue;
+        if (EVE_SHIPS_SET.has(pilotName.toLowerCase())) continue;
+
+        // ── Step 3: try to refine against known local pilots ─────────────────
+
+        if (knownPilots.length > 0) {
+            // Exact case-insensitive match
+            const exact = knownPilots.find(p => p.toLowerCase() === pilotName.toLowerCase());
+            if (exact) {
+                pilotName = exact;
+            } else {
+                // Fuzzy prefix — OCR may garble a char near the end.
+                // Accept if first min(6, len) chars match start of a known pilot.
+                const prefLen = Math.min(pilotName.length, 6);
+                const ocrPfx  = pilotName.toLowerCase().slice(0, prefLen);
+                const partial  = knownPilots.find(p => p.toLowerCase().startsWith(ocrPfx));
+                if (partial) pilotName = partial;
+            }
+        }
+
+        console.log(`[parseEVEText] line="${line}" → ship="${matchedShip}" pilot="${pilotName}"`);
+        results.push({ pilotName, shipType: matchedShip, dateLost, valueISK });
+    }
+
+    // Deduplicate: same named pilot+ship = one entry; unidentified entries are never merged
+    // (5 Kestrels from 5 different pilots all show as 5 CONFIRMED, not collapsed to 1).
+    const seen = new Set();
+    let unnamedIdx = 0;
+    return results.filter(r => {
+        const key = r.pilotName
+            ? `${r.pilotName.toLowerCase()}|${r.shipType.toLowerCase()}`
+            : `_${unnamedIdx++}`;
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+    });
+}
+
+function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractISK(text) {
+    // e.g. "50.5M ISK" / "1.2B ISK" / "50,500,000.00 ISK"
+    const m = text.match(/([\d,]+\.?\d*)\s*([MB])?\s*ISK/i);
+    if (!m) return null;
+    const num = parseFloat(m[1].replace(/,/g, ''));
+    if (m[2] && m[2].toUpperCase() === 'B') return num * 1e9;
+    if (m[2] && m[2].toUpperCase() === 'M') return num * 1e6;
+    return num;
+}
+
+function extractDate(text) {
+    const m = text.match(/\d{4}[-./]\d{2}[-./]\d{2}/);
+    return m ? m[0] : null;
+}
+
+function formatISK(v) {
+    if (!v) return null;
+    if (v >= 1e9) return `${(v/1e9).toFixed(1)}B ISK`;
+    if (v >= 1e6) return `${(v/1e6).toFixed(1)}M ISK`;
+    return `${Math.round(v).toLocaleString()} ISK`;
+}
+
+function renderConfirmedPreview(confirmed) {
+    const wrap = document.getElementById('confirmedPreview');
+    const list = document.getElementById('confirmedPreviewList');
+    list.innerHTML = '';
+
+    if (!confirmed.length) {
+        list.innerHTML = '<div style="color:var(--text-muted);font-size:11px">No EVE ship/pilot data recognized in screenshot — you can still analyze.</div>';
+        wrap.style.display = 'block';
+        return;
+    }
+
+    confirmed.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'confirmed-preview-item';
+
+        // Editable name field — press Enter to re-run ESI lookup
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = c.pilotName || '';
+        nameInput.placeholder = '(pilot unknown)';
+        nameInput.title = 'Press Enter to re-look up corrected name';
+        nameInput.style.cssText = [
+            'background:transparent',
+            `border-bottom:1px solid ${c.charLookupFailed ? 'var(--warning)' : 'rgba(255,255,255,0.25)'}`,
+            'border-top:none;border-left:none;border-right:none',
+            'color:var(--text-main)',
+            'font-size:12px;font-weight:500',
+            'width:150px;padding:0 2px',
+            'outline:none',
+        ].join(';');
+        nameInput.addEventListener('keydown', async e => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const newName = nameInput.value.trim();
+            if (!newName || newName === confirmedPilots[idx].pilotName) return;
+            // Reset enrichment fields and re-enrich with corrected name
+            confirmedPilots[idx] = {
+                ...confirmedPilots[idx],
+                pilotName: newName,
+                charId: null, charLookupFailed: false, recentLoss: null, factionId: null,
+            };
+            nameInput.disabled = true;
+            const [enriched] = await enrichConfirmedPilots([confirmedPilots[idx]]);
+            confirmedPilots[idx] = enriched;
+            nameInput.disabled = false;
+            renderConfirmedPreview(confirmedPilots);
+        });
+        item.appendChild(nameInput);
+
+        // Ship type
+        const shipSpan = document.createElement('span');
+        shipSpan.style.cssText = 'color:var(--accent)';
+        shipSpan.textContent = c.shipType || '';
+        item.appendChild(shipSpan);
+
+        // Status indicator
+        const statusSpan = document.createElement('span');
+        statusSpan.style.fontSize = '10px';
+        if (c.charLookupFailed) {
+            statusSpan.style.color = 'var(--warning)';
+            statusSpan.textContent = '⚠ name parse failed';
+        } else if (c.charId) {
+            statusSpan.style.color = 'var(--confirmed)';
+            statusSpan.textContent = '✓ ID:' + c.charId + (c.recentLoss ? ' · fit found' : '');
+        }
+        item.appendChild(statusSpan);
+
+        // Date / value from OCR
+        if (c.dateLost) {
+            const dt = document.createElement('span');
+            dt.style.cssText = 'color:var(--text-muted);font-size:11px';
+            dt.textContent = 'lost ' + c.dateLost;
+            item.appendChild(dt);
+        }
+        if (c.valueISK) {
+            const isk = document.createElement('span');
+            isk.style.cssText = 'color:#ffb347;font-size:11px';
+            isk.textContent = formatISK(c.valueISK);
+            item.appendChild(isk);
+        }
+
+        list.appendChild(item);
+    });
+
+    wrap.style.display = 'block';
+}
+
+// ── Parsing helpers ──────────────────────────────────────────────────────────
+function parseDscan(text) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const ignorePatterns = /(depot|tractor|capsule|shuttle|scanner)/i;
+    return lines.map(line => {
+        const cols = line.split('\t').map(c => c.trim()).filter(c => c.length > 0);
+        if (cols.length < 2) return null;
+        const shipType = cols[cols.length - 2];
+        if (!shipType || ignorePatterns.test(shipType)) return null;
+        return { shipType, shipName: cols[cols.length - 3], hasDashFlag: cols[cols.length - 1] === '-' };
+    }).filter(Boolean);
+}
+
+function parsePilotsBlock(text) {
+    return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+}
+
+function parseDockedBlock(text) {
+    return new Set(parsePilotsBlock(text));
+}
+
+// ── State transitions ────────────────────────────────────────────────────────
+async function handleAnalyze() {
+    const dscanText   = document.getElementById('dscanInput').value.trim();
+    const guestText   = document.getElementById('guestInput').value.trim();
+    const stationText = document.getElementById('stationInput').value.trim();
+    const hasConfirmed   = confirmedPilots.length > 0;
+    // Screenshot-only: have screenshot data but no real dscan (local list is optional)
+    const screenshotOnly = hasConfirmed && !dscanText;
+
+    if (!dscanText && !hasConfirmed) {
+        alert('Paste a D-Scan or a killmail screenshot (or both).');
+        return;
+    }
+
+    if (screenshotDataUrl && ocrRunning) {
+        alert('Screenshot is still being processed — please wait a moment and try again.');
+        return;
+    }
+
+    const btn = document.getElementById('analyzeBtn');
+    btn.innerHTML = 'Analyzing…'; btn.disabled = true;
+
+    try {
+        // Build effective dscan — use screenshot ships when no real dscan was pasted
+        let effectiveDscan = dscanText;
+        if (screenshotOnly) {
+            effectiveDscan = confirmedPilots
+                .map(c => `(screenshot)\t${c.shipType}\t-`)
+                .join('\n');
+        }
+
+        // Inject confirmed pilot names into local paste so the backend looks up their fits.
+        // This makes screenshot pilots appear in matchedPilots regardless of whether the
+        // user also pasted a local list.
+        const confirmedNames = confirmedPilots
+            .filter(c => c.pilotName)
+            .map(c => c.pilotName)
+            .filter(n => !guestText.includes(n));
+        const effectiveLocal = confirmedNames.length
+            ? (guestText ? guestText + '\n' : '') + confirmedNames.join('\n')
+            : guestText;
+
+        const response = await fetch('http://localhost:3001/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                localPaste:   effectiveLocal,
+                dscanPaste:   effectiveDscan,
+                stationPaste: stationText,
+            })
+        });
+
+        if (!response.ok) throw new Error('Backend error: ' + response.status);
+
+        const data = await response.json();
+        renderResults(data, confirmedPilots, screenshotOnly);
+
+        document.getElementById('inputPanel').classList.add('hidden');
+        document.getElementById('shipsPanel').style.display = 'flex';
+        document.getElementById('shipsPanelTitle').textContent =
+            screenshotOnly ? 'Confirmed Ships (Screenshot)' : 'Ships on D-Scan';
+
+    } catch (err) {
+        alert('Error connecting to backend: ' + err.message + '\n\nMake sure the backend is running (npm run dev).');
+    } finally {
+        btn.innerHTML = '<span class="icon">✦</span> Analyze';
+        btn.disabled  = false;
+    }
+}
+
+function handleNewScan() {
+    ['dscanInput','guestInput','stationInput'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('shipList').innerHTML = '';
+    document.getElementById('shipsMeta').textContent = '0 ships';
+    document.getElementById('shipsPanel').style.display = 'none';
+    document.getElementById('inputPanel').classList.remove('hidden');
+    clearScreenshot();
+}
+
+// ── Resistance display ───────────────────────────────────────────────────────
+function buildResistDisplay(stats) {
+    const div = document.createElement('div');
+    div.className = 'resist-display';
+
+    if (!stats) {
+        div.innerHTML = '<div class="resist-loading">No resistance data for this hull</div>';
         return div;
     }
 
-    function renderResults(data) {
-        const listEl = document.getElementById("shipList");
-        listEl.innerHTML = "";
+    const layers = [
+        { resists: stats.shieldResists, label: 'Shield', color: '#7ecfff' },
+        { resists: stats.armorResists,  label: 'Armor',  color: '#ffb36b' },
+        { resists: stats.hullResists,   label: 'Hull',   color: '#8fa4c0' },
+    ];
+    const dmg = [
+        { key: 'em',    label: 'EM', color: '#e8d44a' },
+        { key: 'therm', label: 'Th', color: '#ff6535' },
+        { key: 'kin',   label: 'Ki', color: '#4ab4ff' },
+        { key: 'exp',   label: 'Ex', color: '#ff9c35' },
+    ];
 
-        const meta = document.getElementById("shipsMeta");
-        meta.textContent = `${data.ships.length} distinct ships | ${data.inSpacePilots.length} pilots in space`;
+    div.innerHTML = layers.map(l => `
+        <div class="resist-row">
+            <span class="resist-layer-label" style="color:${l.color}">${l.label}</span>
+            <div class="resist-cells">${dmg.map(d => `
+                <div class="resist-cell">
+                    <span class="resist-dmg-label" style="color:${d.color}">${d.label}</span>
+                    <div class="resist-bar-track">
+                        <div class="resist-bar-fill" style="width:${l.resists[d.key]}%;background:${d.color}"></div>
+                    </div>
+                    <span class="resist-pct">${l.resists[d.key]}%</span>
+                </div>`).join('')}
+            </div>
+        </div>`).join('');
 
-        data.ships.forEach((ship) => {
-            const li = document.createElement("li");
-            li.className = "ship-item";
+    return div;
+}
 
-            const header = document.createElement("div");
-            header.className = "ship-item-header";
+// ── Render results ───────────────────────────────────────────────────────────
+function renderResults(data, confirmed = [], screenshotOnly = false) {
+    console.log('[renderResults] ships from backend:', data.ships.map(s => `${s.shipName}(${s.count ?? 1})`).join(', '));
+    const listEl = document.getElementById('shipList');
+    listEl.innerHTML = '';
 
-            const main = document.createElement("div");
-            main.className = "ship-main";
+    // Build lookup: pilotName (lower) → confirmed OCR info
+    const confirmedMap = new Map();
+    confirmed.forEach(c => { if (c.pilotName) confirmedMap.set(c.pilotName.toLowerCase(), c); });
 
-            const nameRow = document.createElement("div");
-            nameRow.className = "ship-name-row";
+    // Confirmed pilot names (lower) — used to remove them from the unconfirmed pool
+    const confirmedPilotNamesLower = new Set(confirmedMap.keys());
 
-            const chevron = document.createElement("span");
-            chevron.className = "chevron";
-            chevron.textContent = "▶";
+    const meta = document.getElementById('shipsMeta');
+    meta.textContent = screenshotOnly
+        ? `${confirmed.length} confirmed · screenshot only`
+        : `${data.ships.length} distinct ships | ${data.inSpacePilots?.length ?? 0} pilots in space`;
 
-            const nameContainer = document.createElement("span");
-            nameContainer.className = "ship-name-text";
-            nameContainer.innerHTML = `<span>${ship.shipName}</span>`;
+    data.ships.forEach(ship => {
+        // Skip rookie / irrelevant ships
+        if (ROOKIE_SHIPS.has(ship.shipName.toLowerCase())) return;
 
-            nameRow.appendChild(chevron);
-            nameRow.appendChild(nameContainer);
-            main.appendChild(nameRow);
+        // All screenshot entries matching this ship type (pilot name not required)
+        const confirmedForThisShip = confirmed.filter(
+            c => c.shipType.toLowerCase() === ship.shipName.toLowerCase()
+        );
+        // Subset that have an identified pilot name
+        const confirmedWithPilot = confirmedForThisShip.filter(c => c.pilotName);
 
-            const countSpan = document.createElement("span");
-            countSpan.className = "ship-count";
-            countSpan.textContent = `${ship.count}x on scan | ${ship.matchedPilots.length} pilot matches`;
+        const li = document.createElement('li');
+        li.className = 'ship-item' + (confirmedForThisShip.length ? ' has-confirmed' : '');
 
-            header.appendChild(main);
-            header.appendChild(countSpan);
+        // ── Header ──
+        const header = document.createElement('div');
+        header.className = 'ship-item-header';
 
-            const details = document.createElement("div");
-            details.className = "ship-details";
+        const main = document.createElement('div');
+        main.className = 'ship-main';
 
-            details.appendChild(buildResistDisplay(ship.stats));
+        const nameRow = document.createElement('div');
+        nameRow.className = 'ship-name-row';
 
-            if (ship.matchedPilots.length === 0) {
-                details.innerHTML = `<div class="pilot-bottom-line placeholder">No pilots in local have recently lost this ship type.</div>`;
-            } else {
-                ship.matchedPilots.forEach((pilot) => {
-                    pilot.matchedLosses.forEach((loss) => {
-                        const row = document.createElement("div");
-                        row.className = "pilot-row";
+        const chevron = document.createElement('span');
+        chevron.className = 'chevron';
+        chevron.textContent = '▶';
 
-                        // Group fitting by slot
-                        const bySlot = {};
-                        loss.fitting.forEach(item => {
-                            if (!bySlot[item.slot]) bySlot[item.slot] = [];
-                            bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
-                        });
+        const nameContainer = document.createElement('span');
+        nameContainer.className = 'ship-name-text';
+        nameContainer.innerHTML = `<span>${esc(ship.shipName)}</span>`;
+        if (confirmedForThisShip.length) {
+            const badge = document.createElement('span');
+            badge.className = 'confirmed-badge';
+            badge.textContent = `${confirmedForThisShip.length} CONFIRMED`;
+            nameContainer.appendChild(badge);
+        }
 
-                        const fitLines = Object.entries(bySlot)
-                            .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(", ")}</div>`)
-                            .join("");
+        nameRow.appendChild(chevron);
+        nameRow.appendChild(nameContainer);
+        main.appendChild(nameRow);
 
-                        const lostDate = new Date(loss.killmailTime).toLocaleDateString();
-                        const valueM = (loss.totalValue / 1_000_000).toFixed(1);
+        const countSpan = document.createElement('span');
+        countSpan.className = 'ship-count';
 
-                        const kmUrl = `https://zkillboard.com/kill/${loss.killmailId}/`;
-                        row.innerHTML = `
-                            <div class="pilot-top-line">
-                                <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${pilot.characterName}</a>
-                                <span class="pilot-alliance">${pilot.allianceName || pilot.corporationName}</span>
-                                <a href="${kmUrl}" target="_blank" class="fit-tag">Lost ${lostDate} · ${valueM}M ISK</a>
-                            </div>
-                            <div class="pilot-bottom-line km-fit" style="margin-top:4px;cursor:pointer">${fitLines || "No fitting data"}</div>
-                        `;
-                        row.querySelector('.km-fit').addEventListener('click', () => window.open(kmUrl, '_blank'));
+        // Build lookup: characterName (lower) → backend pilot data (for fit retrieval)
+        const pilotFitsMap = new Map();
+        (ship.matchedPilots || []).forEach(mp => pilotFitsMap.set(mp.characterName.toLowerCase(), mp));
 
-                        details.appendChild(row);
-                    });
-                });
+        // Unconfirmed pool excludes pilots we know from the screenshot
+        const unconfirmedMatches = (ship.matchedPilots || []).filter(
+            p => !confirmedPilotNamesLower.has(p.characterName.toLowerCase())
+        );
+        const totalPilots = unconfirmedMatches.length + confirmedWithPilot.length;
+        countSpan.textContent = `${ship.count ?? 1}x on scan | ${totalPilots} pilot match${totalPilots !== 1 ? 'es' : ''}`;
+
+        header.appendChild(main);
+        header.appendChild(countSpan);
+
+        // ── Details ──
+        const details = document.createElement('div');
+        details.className = 'ship-details';
+
+        details.appendChild(buildResistDisplay(ship.stats));
+
+        // ── Confirmed pilots (from screenshot) ──
+        confirmedWithPilot.forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'pilot-row confirmed-pilot-row';
+
+            // Faction tint: prefer ESI factionId, fall back to keyword matching on backend data
+            const _bp   = pilotFitsMap.get(c.pilotName.toLowerCase());
+            const _fKey = c.factionId
+                ? FACTION_ID_TO_KEY[c.factionId]
+                : (_bp ? detectFaction(_bp.allianceName, _bp.corporationName) : null);
+            if (_fKey) row.style.backgroundColor = FACTION_BG[_fKey];
+
+            const top = document.createElement('div');
+            top.className = 'pilot-top-line';
+
+            const badge = document.createElement('span');
+            badge.className = 'confirmed-badge';
+            badge.textContent = 'CONFIRMED';
+
+            const nameEl = document.createElement('a');
+            nameEl.className = 'pilot-name';
+            nameEl.textContent = c.charLookupFailed
+                ? `${c.pilotName} (parse failed)`
+                : c.pilotName;
+            const charId = c.charId ?? _bp?.characterId;
+            nameEl.href = charId
+                ? `https://zkillboard.com/character/${charId}/`
+                : `https://zkillboard.com/character/search/?q=${encodeURIComponent(c.pilotName)}`;
+            nameEl.target = '_blank';
+
+            top.appendChild(badge);
+            top.appendChild(nameEl);
+
+            const tagDate = c.dateLost
+                || (c.recentLoss?.killmailTime ? new Date(c.recentLoss.killmailTime).toLocaleDateString() : null);
+            const tagVal  = c.valueISK ?? c.recentLoss?.totalValue;
+            if (tagDate || tagVal) {
+                const lossTag = document.createElement('span');
+                lossTag.className = 'fit-tag';
+                const parts = [];
+                if (tagDate) parts.push(`Lost ${tagDate}`);
+                if (tagVal)  parts.push(formatISK(tagVal));
+                lossTag.textContent = parts.join(' · ');
+                top.appendChild(lossTag);
             }
 
-            li.appendChild(header);
-            li.appendChild(details);
-            header.addEventListener("click", () => li.classList.toggle("expanded"));
-            listEl.appendChild(li);
+            row.appendChild(top);
+
+            // Fit data: prefer ESI-enriched recentLoss, fall back to backend matchedLosses
+            if (c.recentLoss) {
+                const { killmailId, killmailTime, totalValue, fitting } = c.recentLoss;
+                const lostDate = new Date(killmailTime).toLocaleDateString();
+                const valueM   = (totalValue / 1_000_000).toFixed(1);
+                const kmUrl    = `https://zkillboard.com/kill/${killmailId}/`;
+                const fitLines = Object.entries(fitting)
+                    .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
+                    .join('');
+                const fitLine = document.createElement('div');
+                fitLine.className = 'pilot-bottom-line km-fit';
+                fitLine.style.cssText = 'margin-top:4px;cursor:pointer';
+                fitLine.innerHTML = `<div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Lost ${lostDate} · ${valueM}M ISK</div>${fitLines || 'No fitting data'}`;
+                fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
+                row.appendChild(fitLine);
+            } else if (_bp && _bp.matchedLosses.length > 0) {
+                _bp.matchedLosses.forEach(loss => {
+                    const bySlot = {};
+                    loss.fitting.forEach(item => {
+                        if (!bySlot[item.slot]) bySlot[item.slot] = [];
+                        bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
+                    });
+                    const fitLines = Object.entries(bySlot)
+                        .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
+                        .join('');
+                    const kmUrl   = `https://zkillboard.com/kill/${loss.killmailId}/`;
+                    const fitLine = document.createElement('div');
+                    fitLine.className = 'pilot-bottom-line km-fit';
+                    fitLine.style.cssText = 'margin-top:4px;cursor:pointer';
+                    fitLine.innerHTML = fitLines || 'No fitting data';
+                    fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
+                    row.appendChild(fitLine);
+                });
+            } else {
+                const noFit = document.createElement('div');
+                noFit.className = 'pilot-bottom-line placeholder';
+                noFit.style.marginTop = '4px';
+                noFit.textContent = c.charLookupFailed
+                    ? 'Character not found in ESI — name may be garbled by OCR'
+                    : 'No recent losses on record for this ship type';
+                row.appendChild(noFit);
+            }
+
+            details.appendChild(row);
         });
 
-        // Show any backend errors
-        if (data.errors && data.errors.length > 0) {
-            console.warn("Backend errors:", data.errors);
+        // ── Unconfirmed matched pilots ──
+        if (unconfirmedMatches.length === 0 && confirmedWithPilot.length === 0) {
+            const p = document.createElement('div');
+            p.className = 'pilot-bottom-line placeholder';
+            p.textContent = confirmedForThisShip.length
+                ? 'Ship confirmed via screenshot — pilot could not be identified.'
+                : 'No non-docked pilots matched for this ship.';
+            details.appendChild(p);
+        } else {
+            unconfirmedMatches.forEach(pilot => {
+                const _pilotFc = factionBg(pilot.allianceName, pilot.corporationName);
+
+                // Always render a row so every matched pilot is visible and gets its faction colour
+                if (pilot.matchedLosses.length === 0) {
+                    const row = document.createElement('div');
+                    row.className = 'pilot-row';
+                    row.innerHTML = `
+                        <div class="pilot-top-line">
+                            <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${esc(pilot.characterName)}</a>
+                            <span class="pilot-alliance">${esc(pilot.allianceName || pilot.corporationName)}</span>
+                        </div>
+                        <div class="pilot-bottom-line placeholder" style="margin-top:2px">No recent losses on record</div>`;
+                    if (_pilotFc) row.style.backgroundColor = _pilotFc;
+                    else row.setAttribute('data-char-id', pilot.characterId);
+                    details.appendChild(row);
+                    return;
+                }
+
+                pilot.matchedLosses.forEach(loss => {
+                    const row = document.createElement('div');
+                    row.className = 'pilot-row';
+
+                    const bySlot = {};
+                    loss.fitting.forEach(item => {
+                        if (!bySlot[item.slot]) bySlot[item.slot] = [];
+                        bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
+                    });
+                    const fitLines = Object.entries(bySlot)
+                        .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
+                        .join('');
+
+                    const lostDate = new Date(loss.killmailTime).toLocaleDateString();
+                    const valueM   = (loss.totalValue / 1_000_000).toFixed(1);
+                    const kmUrl    = `https://zkillboard.com/kill/${loss.killmailId}/`;
+
+                    row.innerHTML = `
+                        <div class="pilot-top-line">
+                            <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${esc(pilot.characterName)}</a>
+                            <span class="pilot-alliance">${esc(pilot.allianceName || pilot.corporationName)}</span>
+                            <a href="${kmUrl}" target="_blank" class="fit-tag">Lost ${lostDate} · ${valueM}M ISK</a>
+                        </div>
+                        <div class="pilot-bottom-line km-fit" style="margin-top:4px;cursor:pointer">${fitLines || 'No fitting data'}</div>`;
+                    row.querySelector('.km-fit').addEventListener('click', () => window.open(kmUrl, '_blank'));
+                    if (_pilotFc) row.style.backgroundColor = _pilotFc;
+                    else row.setAttribute('data-char-id', pilot.characterId);
+
+                    details.appendChild(row);
+                });
+            });
         }
-    }
+
+        li.appendChild(header);
+        li.appendChild(details);
+        header.addEventListener('click', () => li.classList.toggle('expanded'));
+        listEl.appendChild(li);
+    });
+
+    if (data.errors?.length) console.warn('Backend errors:', data.errors);
+
+    // Async: apply faction colors via ESI for rows keyword-matching couldn't colour
+    applyFactionColorsFromESI(listEl);
+}
+
+// Fetch ESI faction_id for every pilot row that keyword matching left uncoloured
+async function applyFactionColorsFromESI(listEl) {
+    const rows = listEl.querySelectorAll('[data-char-id]');
+    if (!rows.length) return;
+    await Promise.all([...rows].map(async row => {
+        const charId = row.getAttribute('data-char-id');
+        try {
+            const data = await fetch(`${ESI_BASE}/characters/${charId}/`).then(r => r.json());
+            if (data.faction_id) {
+                const fKey = FACTION_ID_TO_KEY[data.faction_id];
+                if (fKey) row.style.backgroundColor = FACTION_BG[fKey];
+            } else {
+                console.log('[faction] ESI: no faction_id for charId', charId,
+                    '— corp:', data.corporation_id, 'alliance:', data.alliance_id ?? 'none');
+            }
+        } catch (e) {}
+    }));
+}
+
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Event wiring ─────────────────────────────────────────────────────────────
+document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
+document.getElementById('newScanBtn').addEventListener('click', handleNewScan);
+document.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') handleAnalyze(); });
 </script>
 </body>
 </html>
