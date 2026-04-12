@@ -1679,7 +1679,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
 
         const fitCollapseBtn = document.createElement('button');
         fitCollapseBtn.className = 'toggle-btn';
-        fitCollapseBtn.textContent = '↑ Fits';
+        fitCollapseBtn.textContent = 'Collapse Fits';
         fitCollapseBtn.addEventListener('click', e => {
             e.stopPropagation();
             details.querySelectorAll('.pilot-row').forEach(r => {
@@ -1690,7 +1690,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
         });
         const fitExpandBtn = document.createElement('button');
         fitExpandBtn.className = 'toggle-btn';
-        fitExpandBtn.textContent = '↓ Fits';
+        fitExpandBtn.textContent = 'Expand Fits';
         fitExpandBtn.addEventListener('click', e => {
             e.stopPropagation();
             details.querySelectorAll('.pilot-row').forEach(r => {
@@ -1738,11 +1738,11 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
             const nameEl = document.createElement('a');
             nameEl.className = 'pilot-name';
             nameEl.textContent = c.charLookupFailed ? `${c.pilotName} (parse failed)` : c.pilotName;
-            const charId = c.charId ?? _bp?.characterId;
-            nameEl.href = charId
-                ? `https://zkillboard.com/character/${charId}/`
-                : `https://zkillboard.com/character/search/?q=${encodeURIComponent(c.pilotName)}`;
-            nameEl.target = '_blank';
+            // const charId = c.charId ?? _bp?.characterId;
+            // nameEl.href = charId
+            //     ? `https://zkillboard.com/character/${charId}/`
+            //     : `https://zkillboard.com/character/search/?q=${encodeURIComponent(c.pilotName)}`;
+            // nameEl.target = '_blank';
             line1.appendChild(nameEl);
 
             const corpName  = c.corporationName || _bp?.corporationName;
@@ -1840,8 +1840,8 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                     const nameEl = document.createElement('a');
                     nameEl.className = 'pilot-name';
                     nameEl.textContent = pilot.characterName;
-                    nameEl.href = `https://zkillboard.com/character/${pilot.characterId}/`;
-                    nameEl.target = '_blank';
+                    // nameEl.href = `https://zkillboard.com/character/${pilot.characterId}/`;
+                    // nameEl.target = '_blank';
                     line1.appendChild(nameEl);
 
                     if (pilot.corporationName) {
@@ -1857,6 +1857,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                         line1.appendChild(as);
                     }
                     row.appendChild(line1);
+                    addPilotToggle(row, line1);
 
                     if (!loss) {
                         const noFit = document.createElement('div');
@@ -1941,6 +1942,12 @@ function esc(str) {
 // ── Event wiring ─────────────────────────────────────────────────────────────
 document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
 document.getElementById('newScanBtn').addEventListener('click', handleNewScan);
+document.getElementById('collapseAllShips').addEventListener('click', () => {
+    document.querySelectorAll('#shipList .ship-item.expanded').forEach(el => el.classList.remove('expanded'));
+});
+document.getElementById('expandAllShips').addEventListener('click', () => {
+    document.querySelectorAll('#shipList .ship-item:not(.expanded)').forEach(el => el.classList.add('expanded'));
+});
 document.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') handleAnalyze(); });
 
 // ── Usage modal ──────────────────────────────────────────────────────────────
@@ -1957,7 +1964,27 @@ const fitPopShip    = document.getElementById('fitPopoverShip');
 const fitPopDiagram = document.getElementById('fitPopoverDiagram');
 const fitPopRigs    = document.getElementById('fitPopoverRigs');
 
-// typeName (lowercase) → typeID  — populated from invTypes.csv
+// Group IDs for consumables/charges — excluded from the fit visualization
+const CHARGE_GROUP_IDS = new Set([
+    83,  // Charge Medium (cap boosters M, missiles M, etc.)
+    85,  // Charge Large
+    86,  // Charge Small
+    87,  // Charge Extra Large
+    89,  // Defender Missile (legacy)
+    267, // FoF Heavy Missile
+    268, // Nanite Repair Paste
+    372, // Charge XL
+    374, // Charge Capital
+    375, // Charge XL (alternate group)
+    384, // Scan Probe
+    432, // Script (sensor booster script, etc.)
+    450, // Mining Crystal
+    451, // Frequency Crystal (energy weapon ammo)
+    648, // Citadel Torpedo
+    476, // Fighter Ammunition
+]);
+
+// typeName (lowercase) → {id, groupID} — populated from invTypes.csv
 const invTypeMap = new Map();
 (async () => {
     try {
@@ -1967,19 +1994,15 @@ const invTypeMap = new Map();
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
-            // Minimal CSV parse: split on first two commas only (description may contain commas)
             const first = line.indexOf(',');
             const second = line.indexOf(',', first + 1);
             if (first === -1 || second === -1) continue;
-            const typeID   = line.slice(0, first).trim();
-            const groupID  = line.slice(first + 1, second).trim();
-            if (groupID === '83') continue; // skip charges/ammo
+            const typeID  = line.slice(0, first).trim();
+            const groupID = Number(line.slice(first + 1, second).trim());
             const typeName = line.slice(second + 1).trim()
-                // Remove surrounding quotes if present
                 .replace(/^"(.*)"$/, '$1')
-                // Only take up to next comma (typeName is col 2, no embedded commas expected)
                 .split(',')[0].trim();
-            if (typeID && typeName) invTypeMap.set(typeName.toLowerCase(), typeID);
+            if (typeID && typeName) invTypeMap.set(typeName.toLowerCase(), { id: typeID, groupID });
         }
         console.log(`[invTypes] loaded ${invTypeMap.size} types`);
     } catch(e) {
@@ -1988,11 +2011,24 @@ const invTypeMap = new Map();
 })();
 
 function typeIconUrl(typeName) {
-    // Strip quantity suffix: "Light Missile Launcher II x3" → "Light Missile Launcher II"
     const baseName = typeName.replace(/\s+x\d+$/, '').trim();
-    const id = invTypeMap.get(baseName.toLowerCase());
-    if (!id || id === '0') return null;
-    return `https://images.evetech.net/types/${id}/icon`;
+    const entry = invTypeMap.get(baseName.toLowerCase());
+    if (!entry || entry.id === '0') return null;
+    return `https://images.evetech.net/types/${entry.id}/icon`;
+}
+
+// Names that should always be treated as consumables regardless of groupID lookup
+const CONSUMABLE_NAME_FRAGMENTS = [
+    'nanite repair paste',
+    'cap booster',
+    'navy cap booster',
+];
+
+function isConsumable(typeName) {
+    const baseName = typeName.replace(/\s+x\d+$/, '').trim().toLowerCase();
+    if (CONSUMABLE_NAME_FRAGMENTS.some(f => baseName.includes(f))) return true;
+    const entry = invTypeMap.get(baseName);
+    return entry ? CHARGE_GROUP_IDS.has(entry.groupID) : false;
 }
 
 function buildFitDiagram(pilotLabel, fitting, shipName) {
@@ -2003,9 +2039,10 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
             const s = SLOT_NORM[item.slot] || item.slot;
             if (s === 'Drones') return;
             const count = item.qty || 1;
-            if (count > 10) return; // skip ammo/large stacks
-            if (!bySlot[s]) bySlot[s] = [];
+            if (count > 10) return;
             const baseName = item.typeName.replace(/\s+x\d+$/, '').trim();
+            if (isConsumable(baseName)) return;
+            if (!bySlot[s]) bySlot[s] = [];
             for (let i = 0; i < count; i++) bySlot[s].push(baseName);
         });
     } else if (fitting && typeof fitting === 'object') {
@@ -2018,7 +2055,8 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
                 const qtyMatch = m.match(/\s+x(\d+)$/);
                 const count = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
                 const baseName = m.replace(/\s+x\d+$/, '').trim();
-                if (count > 10) return; // skip ammo/large stacks
+                if (count > 10) return;
+                if (isConsumable(baseName)) return;
                 for (let i = 0; i < count; i++) bySlot[s].push(baseName);
             });
         }
@@ -2048,9 +2086,9 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
         return d;
     };
 
-    const makeLabel = (text) => {
+    const makeLabel = (text, align = 'left') => {
         const d = document.createElement('div');
-        d.style.cssText = 'font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);width:100%;margin-bottom:2px;';
+        d.style.cssText = `font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);width:100%;margin-bottom:2px;text-align:${align};`;
         d.textContent = text;
         return d;
     };
@@ -2058,14 +2096,14 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     // Top-left: High slots
     const colHigh = document.createElement('div');
     colHigh.className = 'fit-col-high';
-    colHigh.appendChild(makeLabel('High'));
+    colHigh.appendChild(makeLabel('High', 'left'));
     (bySlot['High'] || []).forEach(m => colHigh.appendChild(makeSlot(m)));
     if (!(bySlot['High'] || []).length) colHigh.appendChild(makeSlot('', true));
 
-    // Bottom-left: Mid slots
+    // Top-right: Mid slots
     const colMid = document.createElement('div');
     colMid.className = 'fit-col-mid';
-    colMid.appendChild(makeLabel('Mid'));
+    colMid.appendChild(makeLabel('Mid', 'right'));
     (bySlot['Mid'] || []).forEach(m => colMid.appendChild(makeSlot(m)));
     if (!(bySlot['Mid'] || []).length) colMid.appendChild(makeSlot('', true));
 
@@ -2075,13 +2113,21 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     const hull = document.createElement('div');
     hull.className = 'fit-ship-hull';
     if (shipName) {
-        const shipId = invTypeMap.get(shipName.toLowerCase());
+        const shipEntry = invTypeMap.get(shipName.toLowerCase());
+        const shipId = shipEntry?.id;
         if (shipId && shipId !== '0') {
             const img = document.createElement('img');
             img.src = `https://images.evetech.net/types/${shipId}/render`;
             img.alt = shipName;
             img.style.cssText = 'width:180px;height:180px;object-fit:cover;';
-            img.onerror = () => { img.remove(); };
+            img.onerror = () => {
+                if (img.src.includes('/render')) {
+                    img.src = `https://images.evetech.net/types/${shipId}/icon`;
+                    img.style.cssText = 'width:120px;height:120px;object-fit:contain;';
+                } else {
+                    img.remove();
+                }
+            };
             hull.appendChild(img);
         }
     }
@@ -2091,7 +2137,7 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     const colRigs = document.createElement('div');
     colRigs.className = 'fit-col-rigs';
     if ((bySlot['Rig'] || []).length) {
-        colRigs.appendChild(makeLabel('Rig'));
+        colRigs.appendChild(makeLabel('Rig', 'right'));
         bySlot['Rig'].forEach(m => {
             const s = makeSlot(m);
             s.classList.add('rig');
