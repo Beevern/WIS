@@ -441,7 +441,7 @@
                     <article class="screenshot-card">
                         <div class="screenshot-header">
                             <div>
-                                <div class="paste-title">Killmail Screenshot</div>
+                                <div class="paste-title">Overview Screenshot</div>
                                 <div class="paste-sub">Ctrl+V · drag &amp; drop · click to upload</div>
                             </div>
                             <button class="clear-ss-btn hidden" id="clearSsBtn">✕ Clear</button>
@@ -450,8 +450,8 @@
                         <div class="screenshot-drop-zone" id="screenshotZone">
                             <div class="screenshot-placeholder" id="ssPlaceholder">
                                 <span class="ss-icon">📷</span>
-                                <span>Paste a killmail screenshot</span>
-                                <span class="ss-hint">zKillboard, in-game kill report, etc.</span>
+                                <span>Paste an overview screenshot</span>
+                                <span class="ss-hint">In-game overview, d-scan, local list, etc.</span>
                             </div>
                             <div class="screenshot-preview" id="ssPreview">
                                 <img id="ssImg" alt="Pasted screenshot" />
@@ -508,9 +508,13 @@ const EVE_SHIPS = [
     'Bantam','Condor','Griffin','Kestrel','Merlin','Heron',
     'Atron','Imicus','Incursus','Maulus','Navitas','Tristan',
     'Breacher','Burst','Probe','Rifter','Slasher','Vigil',
-    // Pirate / Navy Frigates
-    'Dramiel','Daredevil','Worm','Succubus','Cruor',
-    'Slicer','Comet','Firetail','Hookbill',
+    // Pirate 
+    'Dramiel','Daredevil','Worm','Succubus','Cruor','Astero', 'Garmur',
+    //Navy frigs
+    'Slicer','Comet','Firetail','Hookbill', 
+    'Imperial Navy Slicer','Federation Navy Comet','Republic Fleet Firetail','Caldari Navy Hookbill',
+    'Crucifier Navy Issue','Magnate Navy Issue','Griffin Navy Issue','Maulus Navy Issue','Vigil Fleet Issue',
+    'Imicus Navy Issue','Heron Navy Issue','Probe Fleet Issue', 
     // T2 Frigates – Interceptors
     'Crow','Malediction','Ares','Stiletto','Raptor','Taranis','Crusader','Claw',
     // T2 Frigates – Assault
@@ -525,12 +529,14 @@ const EVE_SHIPS = [
     'Damavik','Nergal',
     // T1 Destroyers
     'Catalyst','Coercer','Corax','Cormorant','Algos','Dragoon','Thrasher','Talwar',
+    // Faction Destroyers
+    'Coercer Navy Issue','Cormorant Navy Issue','Thrasher Fleet Issue','Catalyst Navy Issue',
     // T2 Destroyers – Interdictors
     'Flycatcher','Sabre','Heretic','Eris',
     // T2 Destroyers – Command Destroyers
-    'Stork','Magus','Bifrost','Pontifex',
-    // Triglavian Destroyers
-    'Kikimora','Draugur',
+    'Stork','Magus','Bifrost','Pontifex', 
+    // Special Dessies
+    'Kikimora','Draugur', 'Tholos', 
     // EDENCOM Frigates / Destroyers
     'Skybreaker','Thunderchild',
     // T3 Destroyers
@@ -540,60 +546,49 @@ const EVE_SHIPS = [
     'Blackbird','Caracal','Moa','Osprey',
     'Celestis','Exequror','Thorax','Vexor',
     'Bellicose','Rupture','Scythe','Stabber',
+     // Faction Cruisers
+    'Omen Navy Issue','Caracal Navy Issue','Vexor Navy Issue','Stabber Fleet Issue',
+    'Osprey Navy Issue','Augoror Navy Issue','Exequror Navy Issue','Scythe Fleet Issue',
     // Heavy Assault Cruisers
     'Eagle','Cerberus','Deimos','Ishtar','Zealot','Sacrilege','Muninn','Vagabond',
     // Heavy Interdictors
     'Broadsword','Phobos','Devoter','Onyx',
     // Logistics Cruisers
     'Guardian','Basilisk','Oneiros','Scimitar',
-    // Triglavian Cruisers
-    'Vedmak','Ikitursa','Rodiva',
-    // EDENCOM Cruiser
-    'Stormbringer',
+    // Special Cruisers
+    'Vedmak','Ikitursa','Rodiva','Stormbringer',
     // Recon Cruisers
     'Falcon','Rook','Arazu','Lachesis','Pilgrim','Curse','Rapier','Huginn',
     // T3 Cruisers
     'Tengu','Proteus','Loki','Legion',
-    // Pirate / SoE Cruisers
-    'Cynabal','Phantasm','Vigilant','Gila','Ashimmu','Stratios',
+    // Pirate Cruisers
+    'Cynabal','Phantasm','Vigilant','Gila','Ashimmu','Stratios','Orthrus',
     // Triglavian Battlecruisers
     'Drekavac',
     // Battlecruisers
     'Drake','Ferox','Brutix','Myrmidon','Hurricane','Cyclone','Harbinger','Prophecy',
-    // Command Ships
-    'Sleipnir','Claymore','Astarte','Eos','Vulture','Nighthawk','Damnation','Absolution',
-    // Triglavian Battleships
-    'Leshak',
-    // Battleships
-    'Raven','Scorpion','Hyperion','Megathron','Maelstrom','Tempest','Armageddon','Apocalypse',
-    // Marauders
-    'Golem','Kronos','Vargur','Paladin',
-    // Pirate Battleships
-    'Machariel','Vindicator','Nightmare','Rattlesnake','Bhaalgorn','Barghest',
-    // Black Ops Battleships
-    'Widow','Redeemer','Sin','Panther',
-    // Misc / SoE / Special
-    'Venture','Astero','Gnosis','Praxis',
-    // ── Faction / Navy / Fleet / Imperial / Tribal variants ──────────────────
-    // Faction Frigates
-    'Imperial Navy Slicer','Federation Navy Comet','Republic Fleet Firetail','Caldari Navy Hookbill',
-    'Crucifier Navy Issue','Magnate Navy Issue','Griffin Navy Issue','Maulus Navy Issue','Vigil Fleet Issue',
-    // Navy exploration frigates (Uprising expansion)
-    'Imicus Navy Issue','Heron Navy Issue','Probe Fleet Issue', 
-    // Faction Destroyers
-    'Coercer Navy Issue','Cormorant Navy Issue','Thrasher Fleet Issue','Catalyst Navy Issue',
-    // Faction Cruisers
-    'Omen Navy Issue','Caracal Navy Issue','Vexor Navy Issue','Stabber Fleet Issue',
-    // Navy logistics / support cruisers (Uprising expansion)
-    'Osprey Navy Issue','Augoror Navy Issue','Exequror Navy Issue','Scythe Fleet Issue',
     // Faction Battlecruisers
     'Drake Navy Issue','Ferox Navy Issue','Brutix Navy Issue','Hurricane Fleet Issue',
     'Harbinger Navy Issue','Cyclone Fleet Issue','Myrmidon Navy Issue','Prophecy Navy Issue',
+    // Command Ships
+    'Sleipnir','Claymore','Astarte','Eos','Vulture','Nighthawk','Damnation','Absolution',
+    // Triglavian Battleships
+    'Leshak', 'Barbaroga',
+    // Battleships
+    'Raven','Scorpion','Hyperion','Megathron','Maelstrom','Tempest','Armageddon','Apocalypse',
     // Faction Battleships
     'Raven Navy Issue','Scorpion Navy Issue',
     'Megathron Navy Issue','Dominix Navy Issue',
     'Apocalypse Navy Issue','Armageddon Navy Issue',
     'Tempest Fleet Issue','Typhoon Fleet Issue',
+    // Marauders
+    'Golem','Kronos','Vargur','Paladin',
+    // Pirate Battleships
+    'Machariel','Vindicator','Nightmare','Rattlesnake','Bhaalgorn','Barghest','Nestor',
+    // Black Ops Battleships
+    'Widow','Redeemer','Sin','Panther',
+    // Misc / SoE / Special
+    'Venture','Sunesis','Gnosis','Praxis',
 ];
 const EVE_SHIPS_SET = new Set(EVE_SHIPS.map(s => s.toLowerCase()));
 
@@ -655,19 +650,57 @@ const FACTION_ID_TO_KEY = {
     500002: 'minmatar',
     500003: 'amarr',
     500004: 'gallente',
-    500010: 'angel',
-    500011: 'guristas',
+    500010: 'guristas',
+    500011: 'angel',
 };
 
 // ESI killmail item flag → fitting slot label
 function flagToSlot(flag) {
-    if (flag >= 27 && flag <= 34) return 'Hi';
-    if (flag >= 19 && flag <= 26) return 'Med';
+    if (flag >= 27 && flag <= 34) return 'High';
+    if (flag >= 19 && flag <= 26) return 'Mid';
     if (flag >= 11 && flag <= 18) return 'Low';
     if (flag >= 92 && flag <= 99) return 'Rig';
     if (flag >= 125 && flag <= 132) return 'Sub';
     if (flag === 87) return 'Drones';
     return null;
+}
+
+const SLOT_ORDER = ['High', 'Mid', 'Low', 'Rig', 'Sub'];
+
+// Normalise backend slot name strings → display label
+// Backend (types.ts SlotCategory) sends: "High Slot", "Mid Slot", "Low Slot", "Rig", "Subsystem", "Drone Bay"
+const SLOT_NORM = {
+    'High Slot':'High', 'Hi Slot':'High', 'Hi':'High', 'High':'High',
+    'Mid Slot':'Mid',  'Med Slot':'Mid',  'Med':'Mid', 'Mid':'Mid',
+    'Low Slot':'Low',  'Lo Slot':'Low',   'Low':'Low',
+    'Rig Slot':'Rig',  'Rig':'Rig',
+    'Subsystem':'Sub', 'Sub Slot':'Sub',  'Sub':'Sub',
+    'Drone Bay':'Drones', 'Drones':'Drones',
+};
+
+// Build ordered fit-lines HTML from {slot:[strings]} or [{slot,typeName,qty}]
+// Filters out Drone Bay and items with qty > 10 (ammo stacks etc.)
+function buildFitLines(fitting) {
+    const bySlot = {};
+    if (Array.isArray(fitting)) {
+        fitting.forEach(item => {
+            const s = SLOT_NORM[item.slot] || item.slot;
+            if (s === 'Drones') return; // exclude drone bay
+            if ((item.qty || 1) > 10) return; // exclude large stacks (ammo, etc.)
+            if (!bySlot[s]) bySlot[s] = [];
+            bySlot[s].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
+        });
+    } else {
+        for (const [k, v] of Object.entries(fitting)) {
+            const s = SLOT_NORM[k] || k;
+            if (s === 'Drones') continue; // exclude drone bay
+            bySlot[s] = v;
+        }
+    }
+    return SLOT_ORDER
+        .filter(s => bySlot[s]?.length)
+        .map(s => `<div><strong>${s}:</strong> ${bySlot[s].join(', ')}</div>`)
+        .join('') || 'No fitting data';
 }
 
 async function enrichConfirmedPilots(pilots) {
@@ -710,8 +743,22 @@ async function enrichConfirmedPilots(pilots) {
                 : Promise.resolve([])
         ]);
 
-        if (charResult.status === 'fulfilled' && charResult.value?.faction_id) {
-            enriched.factionId = charResult.value.faction_id;
+        if (charResult.status === 'fulfilled') {
+            const cd = charResult.value;
+            if (cd?.faction_id) enriched.factionId = cd.faction_id;
+            const idList = [cd?.corporation_id, cd?.alliance_id].filter(Boolean);
+            if (idList.length) {
+                try {
+                    const nr = await fetch(`${ESI_BASE}/universe/names/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(idList)
+                    });
+                    const nmap = new Map((await nr.json()).map(n => [n.id, n.name]));
+                    enriched.corporationName = nmap.get(cd.corporation_id) || null;
+                    enriched.allianceName    = nmap.get(cd.alliance_id)    || null;
+                } catch (e) {}
+            }
         }
 
         if (lossResult.status === 'fulfilled' && Array.isArray(lossResult.value) && lossResult.value.length) {
@@ -736,15 +783,26 @@ async function enrichConfirmedPilots(pilots) {
                     } catch (e) {}
                 }
 
-                // Group into fitting slots
-                const fitting = {};
+                // Group into fitting slots — skip loaded charges (qty > 1 in a module slot = ammo)
+                const slotBuckets = {};
                 for (const item of items) {
                     const slot = flagToSlot(item.flag);
                     if (!slot) continue;
-                    if (!fitting[slot]) fitting[slot] = [];
-                    const qty  = (item.quantity_destroyed || 0) + (item.quantity_dropped || 0) || 1;
-                    const name = typeNames.get(item.item_type_id) || `[${item.item_type_id}]`;
-                    fitting[slot].push(qty > 1 ? `${name} x${qty}` : name);
+                    if (slot === 'Drones') continue; // exclude drones
+                    const qty = (item.quantity_destroyed || 0) + (item.quantity_dropped || 0) || 1;
+                    // Skip large stacks — these are ammo/charges loaded into launchers/turrets
+                    if (qty > 10) continue;
+                    if (!slotBuckets[slot]) slotBuckets[slot] = {};
+                    const typeId = item.item_type_id;
+                    if (!slotBuckets[slot][typeId])
+                        slotBuckets[slot][typeId] = { name: typeNames.get(typeId) || `[${typeId}]`, qty: 0 };
+                    slotBuckets[slot][typeId].qty += qty;
+                }
+                const fitting = {};
+                for (const slot of SLOT_ORDER) {
+                    if (!slotBuckets[slot]) continue;
+                    fitting[slot] = Object.values(slotBuckets[slot])
+                        .map(i => i.qty > 1 ? `${i.name} x${i.qty}` : i.name);
                 }
 
                 enriched.recentLoss = {
@@ -1063,7 +1121,7 @@ function renderConfirmedPreview(confirmed) {
         nameInput.type = 'text';
         nameInput.value = c.pilotName || '';
         nameInput.placeholder = '(pilot unknown)';
-        nameInput.title = 'Press Enter to re-look up corrected name';
+        nameInput.title = 'Edit name — re-lookup runs when you leave the field';
         nameInput.style.cssText = [
             'background:transparent',
             `border-bottom:1px solid ${c.charLookupFailed ? 'var(--warning)' : 'rgba(255,255,255,0.25)'}`,
@@ -1073,9 +1131,7 @@ function renderConfirmedPreview(confirmed) {
             'width:150px;padding:0 2px',
             'outline:none',
         ].join(';');
-        nameInput.addEventListener('keydown', async e => {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
+        const doReLookup = async () => {
             const newName = nameInput.value.trim();
             if (!newName || newName === confirmedPilots[idx].pilotName) return;
             // Reset enrichment fields and re-enrich with corrected name
@@ -1089,7 +1145,9 @@ function renderConfirmedPreview(confirmed) {
             confirmedPilots[idx] = enriched;
             nameInput.disabled = false;
             renderConfirmedPreview(confirmedPilots);
-        });
+        };
+        nameInput.addEventListener('blur', doReLookup);
+        nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameInput.blur(); } });
         item.appendChild(nameInput);
 
         // Ship type
@@ -1106,7 +1164,7 @@ function renderConfirmedPreview(confirmed) {
             statusSpan.textContent = '⚠ name parse failed';
         } else if (c.charId) {
             statusSpan.style.color = 'var(--confirmed)';
-            statusSpan.textContent = '✓ ID:' + c.charId + (c.recentLoss ? ' · fit found' : '');
+            statusSpan.textContent = c.recentLoss ? '✓ fit found' : '✓ found';
         }
         item.appendChild(statusSpan);
 
@@ -1287,7 +1345,8 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
         ? `${confirmed.length} confirmed · screenshot only`
         : `${data.ships.length} distinct ships | ${data.inSpacePilots?.length ?? 0} pilots in space`;
 
-    data.ships.forEach(ship => {
+    const sortedShips = [...data.ships].sort((a, b) => (a.shipName || '').localeCompare(b.shipName || ''));
+    sortedShips.forEach(ship => {
         // Skip rookie / irrelevant ships
         if (ROOKIE_SHIPS.has(ship.shipName.toLowerCase())) return;
 
@@ -1321,7 +1380,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
         if (confirmedForThisShip.length) {
             const badge = document.createElement('span');
             badge.className = 'confirmed-badge';
-            badge.textContent = `${confirmedForThisShip.length} CONFIRMED`;
+            badge.textContent = `${confirmedForThisShip.length} CONFIRMED ON GRID`;
             nameContainer.appendChild(badge);
         }
 
@@ -1364,79 +1423,79 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
                 : (_bp ? detectFaction(_bp.allianceName, _bp.corporationName) : null);
             if (_fKey) row.style.backgroundColor = FACTION_BG[_fKey];
 
-            const top = document.createElement('div');
-            top.className = 'pilot-top-line';
+            // Line 1: [CONFIRMED ON GRID] Name  Corp  Alliance
+            const line1 = document.createElement('div');
+            line1.className = 'pilot-top-line';
 
             const badge = document.createElement('span');
             badge.className = 'confirmed-badge';
-            badge.textContent = 'CONFIRMED';
+            badge.textContent = 'CONFIRMED ON GRID';
+            line1.appendChild(badge);
 
             const nameEl = document.createElement('a');
             nameEl.className = 'pilot-name';
-            nameEl.textContent = c.charLookupFailed
-                ? `${c.pilotName} (parse failed)`
-                : c.pilotName;
+            nameEl.textContent = c.charLookupFailed ? `${c.pilotName} (parse failed)` : c.pilotName;
             const charId = c.charId ?? _bp?.characterId;
             nameEl.href = charId
                 ? `https://zkillboard.com/character/${charId}/`
                 : `https://zkillboard.com/character/search/?q=${encodeURIComponent(c.pilotName)}`;
             nameEl.target = '_blank';
+            line1.appendChild(nameEl);
 
-            top.appendChild(badge);
-            top.appendChild(nameEl);
+            const corpName  = c.corporationName || _bp?.corporationName;
+            const allyName  = c.allianceName    || _bp?.allianceName;
+            if (corpName) {
+                const cs = document.createElement('span');
+                cs.className = 'pilot-alliance';
+                cs.textContent = corpName;
+                line1.appendChild(cs);
+            }
+            if (allyName) {
+                const as = document.createElement('span');
+                as.className = 'pilot-alliance';
+                as.textContent = allyName;
+                line1.appendChild(as);
+            }
+            row.appendChild(line1);
 
+            // Line 2: Date Lost · Value (as muted sub-line)
             const tagDate = c.dateLost
                 || (c.recentLoss?.killmailTime ? new Date(c.recentLoss.killmailTime).toLocaleDateString() : null);
             const tagVal  = c.valueISK ?? c.recentLoss?.totalValue;
             if (tagDate || tagVal) {
-                const lossTag = document.createElement('span');
-                lossTag.className = 'fit-tag';
+                const line2 = document.createElement('div');
+                line2.className = 'pilot-bottom-line';
+                line2.style.cssText = 'margin-top:1px;margin-bottom:3px';
                 const parts = [];
                 if (tagDate) parts.push(`Lost ${tagDate}`);
                 if (tagVal)  parts.push(formatISK(tagVal));
-                lossTag.textContent = parts.join(' · ');
-                top.appendChild(lossTag);
+                line2.textContent = parts.join(' · ');
+                row.appendChild(line2);
             }
 
-            row.appendChild(top);
-
-            // Fit data: prefer ESI-enriched recentLoss, fall back to backend matchedLosses
+            // Lines 3+: Fit
             if (c.recentLoss) {
-                const { killmailId, killmailTime, totalValue, fitting } = c.recentLoss;
-                const lostDate = new Date(killmailTime).toLocaleDateString();
-                const valueM   = (totalValue / 1_000_000).toFixed(1);
-                const kmUrl    = `https://zkillboard.com/kill/${killmailId}/`;
-                const fitLines = Object.entries(fitting)
-                    .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
-                    .join('');
+                const { killmailId, fitting } = c.recentLoss;
+                const kmUrl   = `https://zkillboard.com/kill/${killmailId}/`;
                 const fitLine = document.createElement('div');
                 fitLine.className = 'pilot-bottom-line km-fit';
-                fitLine.style.cssText = 'margin-top:4px;cursor:pointer';
-                fitLine.innerHTML = `<div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Lost ${lostDate} · ${valueM}M ISK</div>${fitLines || 'No fitting data'}`;
+                fitLine.style.cssText = 'cursor:pointer';
+                fitLine.innerHTML = buildFitLines(fitting);
                 fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                 row.appendChild(fitLine);
             } else if (_bp && _bp.matchedLosses.length > 0) {
                 _bp.matchedLosses.forEach(loss => {
-                    const bySlot = {};
-                    loss.fitting.forEach(item => {
-                        if (!bySlot[item.slot]) bySlot[item.slot] = [];
-                        bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
-                    });
-                    const fitLines = Object.entries(bySlot)
-                        .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
-                        .join('');
                     const kmUrl   = `https://zkillboard.com/kill/${loss.killmailId}/`;
                     const fitLine = document.createElement('div');
                     fitLine.className = 'pilot-bottom-line km-fit';
-                    fitLine.style.cssText = 'margin-top:4px;cursor:pointer';
-                    fitLine.innerHTML = fitLines || 'No fitting data';
+                    fitLine.style.cssText = 'cursor:pointer';
+                    fitLine.innerHTML = buildFitLines(loss.fitting);
                     fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                     row.appendChild(fitLine);
                 });
             } else {
                 const noFit = document.createElement('div');
                 noFit.className = 'pilot-bottom-line placeholder';
-                noFit.style.marginTop = '4px';
                 noFit.textContent = c.charLookupFailed
                     ? 'Character not found in ESI — name may be garbled by OCR'
                     : 'No recent losses on record for this ship type';
@@ -1458,52 +1517,74 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
             unconfirmedMatches.forEach(pilot => {
                 const _pilotFc = factionBg(pilot.allianceName, pilot.corporationName);
 
-                // Always render a row so every matched pilot is visible and gets its faction colour
-                if (pilot.matchedLosses.length === 0) {
+                const buildPilotRow = (loss) => {
                     const row = document.createElement('div');
                     row.className = 'pilot-row';
-                    row.innerHTML = `
-                        <div class="pilot-top-line">
-                            <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${esc(pilot.characterName)}</a>
-                            <span class="pilot-alliance">${esc(pilot.allianceName || pilot.corporationName)}</span>
-                        </div>
-                        <div class="pilot-bottom-line placeholder" style="margin-top:2px">No recent losses on record</div>`;
                     if (_pilotFc) row.style.backgroundColor = _pilotFc;
                     else row.setAttribute('data-char-id', pilot.characterId);
-                    details.appendChild(row);
-                    return;
-                }
 
-                pilot.matchedLosses.forEach(loss => {
-                    const row = document.createElement('div');
-                    row.className = 'pilot-row';
+                    // Line 1: Name  Corp  Alliance
+                    const line1 = document.createElement('div');
+                    line1.className = 'pilot-top-line';
 
-                    const bySlot = {};
-                    loss.fitting.forEach(item => {
-                        if (!bySlot[item.slot]) bySlot[item.slot] = [];
-                        bySlot[item.slot].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
-                    });
-                    const fitLines = Object.entries(bySlot)
-                        .map(([slot, items]) => `<div><strong>${slot}:</strong> ${items.join(', ')}</div>`)
-                        .join('');
+                    const nameEl = document.createElement('a');
+                    nameEl.className = 'pilot-name';
+                    nameEl.textContent = pilot.characterName;
+                    nameEl.href = `https://zkillboard.com/character/${pilot.characterId}/`;
+                    nameEl.target = '_blank';
+                    line1.appendChild(nameEl);
 
+                    if (pilot.corporationName) {
+                        const cs = document.createElement('span');
+                        cs.className = 'pilot-alliance';
+                        cs.textContent = pilot.corporationName;
+                        line1.appendChild(cs);
+                    }
+                    if (pilot.allianceName) {
+                        const as = document.createElement('span');
+                        as.className = 'pilot-alliance';
+                        as.textContent = pilot.allianceName;
+                        line1.appendChild(as);
+                    }
+                    row.appendChild(line1);
+
+                    if (!loss) {
+                        const noFit = document.createElement('div');
+                        noFit.className = 'pilot-bottom-line placeholder';
+                        noFit.style.marginTop = '1px';
+                        noFit.textContent = 'No recent losses on record';
+                        row.appendChild(noFit);
+                        return row;
+                    }
+
+                    // Line 2: Date · Value
                     const lostDate = new Date(loss.killmailTime).toLocaleDateString();
-                    const valueM   = (loss.totalValue / 1_000_000).toFixed(1);
-                    const kmUrl    = `https://zkillboard.com/kill/${loss.killmailId}/`;
+                    const valueStr = formatISK(loss.totalValue);
+                    const line2 = document.createElement('div');
+                    line2.className = 'pilot-bottom-line';
+                    line2.style.cssText = 'margin-top:1px;margin-bottom:3px';
+                    line2.textContent = `Lost ${lostDate} · ${valueStr}`;
+                    row.appendChild(line2);
 
-                    row.innerHTML = `
-                        <div class="pilot-top-line">
-                            <a href="https://zkillboard.com/character/${pilot.characterId}/" target="_blank" class="pilot-name">${esc(pilot.characterName)}</a>
-                            <span class="pilot-alliance">${esc(pilot.allianceName || pilot.corporationName)}</span>
-                            <a href="${kmUrl}" target="_blank" class="fit-tag">Lost ${lostDate} · ${valueM}M ISK</a>
-                        </div>
-                        <div class="pilot-bottom-line km-fit" style="margin-top:4px;cursor:pointer">${fitLines || 'No fitting data'}</div>`;
-                    row.querySelector('.km-fit').addEventListener('click', () => window.open(kmUrl, '_blank'));
-                    if (_pilotFc) row.style.backgroundColor = _pilotFc;
-                    else row.setAttribute('data-char-id', pilot.characterId);
+                    // Lines 3+: Fit
+                    const kmUrl = `https://zkillboard.com/kill/${loss.killmailId}/`;
+                    const fitLine = document.createElement('div');
+                    fitLine.className = 'pilot-bottom-line km-fit';
+                    fitLine.style.cssText = 'cursor:pointer';
+                    fitLine.innerHTML = buildFitLines(loss.fitting);
+                    fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
+                    row.appendChild(fitLine);
 
-                    details.appendChild(row);
-                });
+                    return row;
+                };
+
+                if (pilot.matchedLosses.length === 0) {
+                    details.appendChild(buildPilotRow(null));
+                } else {
+                    pilot.matchedLosses.forEach(loss => {
+                        details.appendChild(buildPilotRow(loss));
+                    });
+                }
             });
         }
 
