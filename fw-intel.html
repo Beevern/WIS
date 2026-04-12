@@ -389,6 +389,171 @@
             body { padding: 12px; }
             .app-shell { border-radius: 16px; }
         }
+
+        /* ── Secondary button (Usage) ── */
+        .secondary-btn {
+            border: 1px solid rgba(0,224,255,0.4);
+            border-radius: 999px;
+            padding: 9px 18px;
+            background: rgba(0,224,255,0.06);
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+        }
+        .secondary-btn:hover {
+            background: rgba(0,224,255,0.12);
+            border-color: rgba(0,224,255,0.7);
+            transform: translateY(-1px);
+        }
+
+        /* ── Usage modal ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal-box {
+            background: linear-gradient(145deg, rgba(10,17,42,0.99), rgba(4,9,28,0.99));
+            border: 1px solid rgba(0,224,255,0.3);
+            border-radius: 18px;
+            padding: 28px 32px;
+            max-width: 560px;
+            width: 90%;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin: 0 0 16px;
+        }
+        .modal-body { font-size: 13px; color: var(--text-main); line-height: 1.65; }
+        .modal-body p { margin: 0 0 12px; }
+        .modal-body p:last-child { margin-bottom: 0; }
+        .modal-close {
+            position: absolute;
+            top: 14px; right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: color var(--transition-fast), background var(--transition-fast);
+        }
+        .modal-close:hover { color: var(--text-main); background: rgba(255,255,255,0.07); }
+
+        /* ── Fit popover ── */
+        .fit-popover {
+            display: none;
+            position: fixed;
+            z-index: 900;
+            pointer-events: none;
+            min-width: 260px;
+            max-width: 340px;
+        }
+        .fit-popover.visible { display: block; }
+        .fit-popover-inner {
+            background: linear-gradient(145deg, rgba(6,13,36,0.99), rgba(2,7,22,0.99));
+            border: 1px solid rgba(0,224,255,0.35);
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.75);
+            font-size: 12px;
+        }
+        .fit-popover-pilot {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(0,224,255,0.15);
+        }
+        .fit-diagram {
+            display: grid;
+            grid-template-columns: 100px 1fr 100px;
+            grid-template-rows: auto auto auto;
+            gap: 3px 6px;
+            align-items: center;
+        }
+        .fit-col-high  { grid-column: 1; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+        .fit-col-mid   { grid-column: 3; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+        .fit-col-center { grid-column: 2; grid-row: 1 / 3; display: flex; align-items: center; justify-content: center; }
+        .fit-col-low   { grid-column: 1; grid-row: 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+        .fit-col-rig   { grid-column: 3; grid-row: 4; display: flex; flex-direction: column; gap: 3px; }
+
+        .fit-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 5px;
+            padding: 2px;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        .fit-slot.empty {
+            border-style: dashed;
+            border-color: rgba(255,255,255,0.06);
+            width: 28px;
+            height: 28px;
+        }
+        .fit-slot-icon {
+            width: 24px; height: 24px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            object-fit: cover;
+            background: rgba(0,0,0,0.4);
+        }
+        .fit-slot-icon-placeholder {
+            width: 24px; height: 24px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .fit-section-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            margin-bottom: 1px;
+            margin-top: 4px;
+        }
+        .fit-ship-hull {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,224,255,0.14), rgba(0,0,0,0.6));
+            border: 1px solid rgba(0,224,255,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+        }
+        .fit-rig-row { display: flex; gap: 3px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+        .fit-slot.rig { width: 28px; height: 28px; }
     </style>
 </head>
 <body>
@@ -398,9 +563,14 @@
             <h1>Who's in Space?</h1>
             <span>Match ships on dscan to pilots in local! Tool works best if there are not too many people in local as that would create ambiguity and less-helpful results</span>
         </div>
-        <button id="newScanBtn" class="primary-btn">
-            <span class="icon">⟳</span> New Scan
-        </button>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button id="usageBtn" class="secondary-btn">
+                <span class="icon">?</span> Usage
+            </button>
+            <button id="newScanBtn" class="primary-btn">
+                <span class="icon">⟳</span> New Scan
+            </button>
+        </div>
     </header>
 
     <div class="app-body">
@@ -497,6 +667,26 @@
             </div>
             <ul id="shipList" class="ship-list"></ul>
         </section>
+    </div>
+</div>
+
+<!-- Usage modal -->
+<div class="modal-backdrop" id="usageModal">
+    <div class="modal-box">
+        <button class="modal-close" id="usageModalClose">✕</button>
+        <div class="modal-title">How to Use</div>
+        <div class="modal-body">
+            <p>PLACEHOLDER PLACEHOLDER</p>
+        </div>
+    </div>
+</div>
+
+<!-- Fit popover (follows cursor) -->
+<div class="fit-popover" id="fitPopover">
+    <div class="fit-popover-inner">
+        <div class="fit-popover-pilot" id="fitPopoverPilot"></div>
+        <div id="fitPopoverDiagram"></div>
+        <div class="fit-rig-row" id="fitPopoverRigs"></div>
     </div>
 </div>
 
@@ -1164,7 +1354,7 @@ function renderConfirmedPreview(confirmed) {
             statusSpan.textContent = '⚠ name parse failed';
         } else if (c.charId) {
             statusSpan.style.color = 'var(--confirmed)';
-            statusSpan.textContent = c.recentLoss ? '✓ fit found' : '✓ found';
+            statusSpan.textContent = c.recentLoss ? '✓ char and fit found' : '✓ char found';
         }
         item.appendChild(statusSpan);
 
@@ -1351,9 +1541,12 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
         if (ROOKIE_SHIPS.has(ship.shipName.toLowerCase())) return;
 
         // All screenshot entries matching this ship type (pilot name not required)
-        const confirmedForThisShip = confirmed.filter(
-            c => c.shipType.toLowerCase() === ship.shipName.toLowerCase()
-        );
+        // Use fuzzy match: exact OR one starts-with the other (handles OCR/dscan truncation)
+        const confirmedForThisShip = confirmed.filter(c => {
+            const a = c.shipType.toLowerCase();
+            const b = ship.shipName.toLowerCase();
+            return a === b || a.startsWith(b) || b.startsWith(a);
+        });
         // Subset that have an identified pilot name
         const confirmedWithPilot = confirmedForThisShip.filter(c => c.pilotName);
 
@@ -1481,6 +1674,9 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
                 fitLine.className = 'pilot-bottom-line km-fit';
                 fitLine.style.cssText = 'cursor:pointer';
                 fitLine.innerHTML = buildFitLines(fitting);
+                fitLine.dataset.fitJson  = JSON.stringify(fitting);
+                fitLine.dataset.fitPilot = c.pilotName || '';
+                fitLine.dataset.fitShip  = c.shipType || '';
                 fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                 row.appendChild(fitLine);
             } else if (_bp && _bp.matchedLosses.length > 0) {
@@ -1490,6 +1686,9 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
                     fitLine.className = 'pilot-bottom-line km-fit';
                     fitLine.style.cssText = 'cursor:pointer';
                     fitLine.innerHTML = buildFitLines(loss.fitting);
+                    fitLine.dataset.fitJson  = JSON.stringify(loss.fitting);
+                    fitLine.dataset.fitPilot = c.pilotName || '';
+                    fitLine.dataset.fitShip  = c.shipType || '';
                     fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                     row.appendChild(fitLine);
                 });
@@ -1572,6 +1771,9 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
                     fitLine.className = 'pilot-bottom-line km-fit';
                     fitLine.style.cssText = 'cursor:pointer';
                     fitLine.innerHTML = buildFitLines(loss.fitting);
+                    fitLine.dataset.fitJson  = JSON.stringify(loss.fitting);
+                    fitLine.dataset.fitPilot = pilot.characterName || '';
+                    fitLine.dataset.fitShip  = ship.shipName || '';
                     fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                     row.appendChild(fitLine);
 
@@ -1629,6 +1831,219 @@ function esc(str) {
 document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
 document.getElementById('newScanBtn').addEventListener('click', handleNewScan);
 document.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') handleAnalyze(); });
+
+// ── Usage modal ──────────────────────────────────────────────────────────────
+const usageModal = document.getElementById('usageModal');
+document.getElementById('usageBtn').addEventListener('click', () => usageModal.classList.add('open'));
+document.getElementById('usageModalClose').addEventListener('click', () => usageModal.classList.remove('open'));
+usageModal.addEventListener('click', e => { if (e.target === usageModal) usageModal.classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') usageModal.classList.remove('open'); });
+
+// ── Fit popover ──────────────────────────────────────────────────────────────
+const fitPopover    = document.getElementById('fitPopover');
+const fitPopPilot   = document.getElementById('fitPopoverPilot');
+const fitPopDiagram = document.getElementById('fitPopoverDiagram');
+const fitPopRigs    = document.getElementById('fitPopoverRigs');
+
+// typeName (lowercase) → typeID  — populated from invTypes.csv
+const invTypeMap = new Map();
+(async () => {
+    try {
+        const txt = await fetch('./invTypes.csv').then(r => r.text());
+        // Skip header line; columns: typeID(0), groupID(1), typeName(2), ...
+        const lines = txt.split('\n');
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            // Minimal CSV parse: split on first two commas only (description may contain commas)
+            const first = line.indexOf(',');
+            const second = line.indexOf(',', first + 1);
+            if (first === -1 || second === -1) continue;
+            const typeID   = line.slice(0, first).trim();
+            const typeName = line.slice(second + 1).trim()
+                // Remove surrounding quotes if present
+                .replace(/^"(.*)"$/, '$1')
+                // Only take up to next comma (typeName is col 2, no embedded commas expected)
+                .split(',')[0].trim();
+            if (typeID && typeName) invTypeMap.set(typeName.toLowerCase(), typeID);
+        }
+        console.log(`[invTypes] loaded ${invTypeMap.size} types`);
+    } catch(e) {
+        console.warn('[invTypes] could not load invTypes.csv:', e.message);
+    }
+})();
+
+function typeIconUrl(typeName) {
+    // Strip quantity suffix: "Light Missile Launcher II x3" → "Light Missile Launcher II"
+    const baseName = typeName.replace(/\s+x\d+$/, '').trim();
+    const id = invTypeMap.get(baseName.toLowerCase());
+    if (!id || id === '0') return null;
+    return `https://images.evetech.net/types/${id}/icon`;
+}
+
+function buildFitDiagram(pilotLabel, fitting) {
+    // Parse fitting into slot buckets — store plain module names (no qty suffix)
+    const bySlot = {};
+    if (Array.isArray(fitting)) {
+        fitting.forEach(item => {
+            const s = SLOT_NORM[item.slot] || item.slot;
+            if (s === 'Drones') return;
+            if ((item.qty || 1) > 10) return;
+            if (!bySlot[s]) bySlot[s] = [];
+            // Strip qty suffix for display and icon lookup
+            bySlot[s].push(item.typeName.replace(/\s+x\d+$/, '').trim());
+        });
+    } else if (fitting && typeof fitting === 'object') {
+        for (const [k, v] of Object.entries(fitting)) {
+            const s = SLOT_NORM[k] || k;
+            if (s === 'Drones') continue;
+            const items = Array.isArray(v) ? v : [v];
+            bySlot[s] = items.map(m => m.replace(/\s+x\d+$/, '').trim());
+        }
+    }
+
+    const makeSlot = (name, empty = false) => {
+        const d = document.createElement('div');
+        d.className = 'fit-slot' + (empty ? ' empty' : '');
+        d.title = empty ? '(empty)' : name;
+
+        if (!empty) {
+            const iconUrl = typeIconUrl(name);
+            if (iconUrl) {
+                const img = document.createElement('img');
+                img.className = 'fit-slot-icon';
+                img.src = iconUrl;
+                img.alt = '';
+                img.onerror = () => { img.style.display = 'none'; };
+                d.appendChild(img);
+            } else {
+                const ph = document.createElement('span');
+                ph.className = 'fit-slot-icon-placeholder';
+                d.appendChild(ph);
+            }
+        }
+
+        return d;
+    };
+
+    const makeSectionLabel = (text) => {
+        const d = document.createElement('div');
+        d.className = 'fit-section-label';
+        d.textContent = text;
+        return d;
+    };
+
+    // Left column: High slots
+    const colHigh = document.createElement('div');
+    colHigh.className = 'fit-col-high';
+    colHigh.appendChild(makeSectionLabel('High'));
+    (bySlot['High'] || []).forEach(m => colHigh.appendChild(makeSlot(m)));
+    if (!(bySlot['High'] || []).length) colHigh.appendChild(makeSlot('', true));
+
+    // Right column: Mid slots
+    const colMid = document.createElement('div');
+    colMid.className = 'fit-col-mid';
+    colMid.appendChild(makeSectionLabel('Mid'));
+    (bySlot['Mid'] || []).forEach(m => colMid.appendChild(makeSlot(m)));
+    if (!(bySlot['Mid'] || []).length) colMid.appendChild(makeSlot('', true));
+
+    // Center: ship placeholder
+    const center = document.createElement('div');
+    center.className = 'fit-col-center';
+    const hull = document.createElement('div');
+    hull.className = 'fit-ship-hull';
+    hull.textContent = '🚀';
+    center.appendChild(hull);
+
+    // Low slots
+    const colLow = document.createElement('div');
+    colLow.className = 'fit-col-low';
+    colLow.appendChild(makeSectionLabel('Low'));
+    (bySlot['Low'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
+    if (!(bySlot['Low'] || []).length) colLow.appendChild(makeSlot('', true));
+
+    // Sub slots (T3 cruisers)
+    const colSub = document.createElement('div');
+    colSub.className = 'fit-col-rig';
+    if ((bySlot['Sub'] || []).length) {
+        colSub.appendChild(makeSectionLabel('Sub'));
+        bySlot['Sub'].forEach(m => colSub.appendChild(makeSlot(m)));
+    }
+
+    // Assemble grid
+    const grid = document.createElement('div');
+    grid.className = 'fit-diagram';
+    grid.style.gridTemplateRows = 'auto auto auto auto';
+    grid.appendChild(colHigh);
+    grid.appendChild(center);
+    grid.appendChild(colMid);
+    grid.appendChild(colLow);
+    grid.appendChild(document.createElement('div'));
+    grid.appendChild(colSub);
+
+    // Rig row (horizontal, below grid)
+    const rigRow = document.createElement('div');
+    rigRow.className = 'fit-rig-row';
+    if ((bySlot['Rig'] || []).length) {
+        const lbl = document.createElement('div');
+        lbl.className = 'fit-section-label';
+        lbl.style.cssText = 'width:100%;text-align:center;margin-bottom:2px';
+        lbl.textContent = 'Rigs';
+        rigRow.appendChild(lbl);
+        bySlot['Rig'].forEach(m => {
+            const s = makeSlot(m);
+            s.classList.add('rig');
+            rigRow.appendChild(s);
+        });
+    }
+
+    return { grid, rigRow };
+}
+
+function showFitPopover(e, pilotLabel, fitting) {
+    fitPopPilot.textContent = pilotLabel;
+    fitPopDiagram.innerHTML = '';
+    fitPopRigs.innerHTML = '';
+    const { grid, rigRow } = buildFitDiagram(pilotLabel, fitting);
+    fitPopDiagram.appendChild(grid);
+    fitPopRigs.appendChild(rigRow);
+    fitPopover.classList.add('visible');
+    positionPopover(e);
+}
+
+function positionPopover(e) {
+    const pw = fitPopover.offsetWidth  || 320;
+    const ph = fitPopover.offsetHeight || 220;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const gap = 14;
+    let x = e.clientX + gap;
+    let y = e.clientY + gap;
+    if (x + pw > vw - 8) x = e.clientX - pw - gap;
+    if (y + ph > vh - 8) y = e.clientY - ph - gap;
+    fitPopover.style.left = Math.max(8, x) + 'px';
+    fitPopover.style.top  = Math.max(8, y) + 'px';
+}
+
+function hideFitPopover() {
+    fitPopover.classList.remove('visible');
+}
+
+// Event delegation on ship list for fit hover
+document.getElementById('shipList').addEventListener('mouseover', e => {
+    const kmFit = e.target.closest('.km-fit[data-fit-json]');
+    if (!kmFit) return;
+    const fitting = JSON.parse(kmFit.dataset.fitJson);
+    const pilot   = kmFit.dataset.fitPilot || '';
+    showFitPopover(e, pilot, fitting);
+});
+document.getElementById('shipList').addEventListener('mousemove', e => {
+    if (fitPopover.classList.contains('visible')) positionPopover(e);
+});
+document.getElementById('shipList').addEventListener('mouseout', e => {
+    const kmFit = e.target.closest('.km-fit[data-fit-json]');
+    if (kmFit) hideFitPopover();
+});
 </script>
 </body>
 </html>
