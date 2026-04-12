@@ -275,6 +275,45 @@
             flex-shrink: 0;
         }
 
+        /* ── Tiny toggle buttons (collapse/expand) ── */
+        .toggle-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 5px;
+            color: var(--text-muted);
+            font-size: 10px;
+            padding: 2px 7px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color var(--transition-fast), border-color var(--transition-fast);
+        }
+        .toggle-btn:hover { color: var(--text-main); border-color: rgba(255,255,255,0.35); }
+
+        /* ── Pilot row collapse ── */
+        .pilot-chevron {
+            font-size: 9px;
+            color: var(--accent);
+            margin-right: 4px;
+            flex-shrink: 0;
+            display: inline-block;
+            transition: transform var(--transition-fast);
+        }
+        .pilot-row.pilot-collapsed > *:not(:first-child) { display: none !important; }
+
+        /* ── On-grid badge ── */
+        .on-grid-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(255,179,71,0.12);
+            border: 1px solid rgba(255,179,71,0.45);
+            color: var(--warning);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         .analyze-row {
             margin-top: auto;
             display: flex;
@@ -469,8 +508,8 @@
             position: fixed;
             z-index: 900;
             pointer-events: none;
-            min-width: 260px;
-            max-width: 340px;
+            min-width: 360px;
+            max-width: 480px;
         }
         .fit-popover.visible { display: block; }
         .fit-popover-inner {
@@ -487,22 +526,26 @@
             letter-spacing: 0.07em;
             text-transform: uppercase;
             color: var(--accent);
+            margin-bottom: 2px;
+        }
+        .fit-popover-ship {
+            font-size: 10px;
+            color: var(--text-muted);
             margin-bottom: 8px;
             padding-bottom: 6px;
             border-bottom: 1px solid rgba(0,224,255,0.15);
         }
         .fit-diagram {
             display: grid;
-            grid-template-columns: 100px 1fr 100px;
+            grid-template-columns: 1fr 1fr;
             grid-template-rows: auto auto auto;
-            gap: 3px 6px;
-            align-items: center;
+            gap: 6px 4px;
         }
-        .fit-col-high  { grid-column: 1; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
-        .fit-col-mid   { grid-column: 3; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
-        .fit-col-center { grid-column: 2; grid-row: 1 / 3; display: flex; align-items: center; justify-content: center; }
-        .fit-col-low   { grid-column: 1; grid-row: 4; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
-        .fit-col-rig   { grid-column: 3; grid-row: 4; display: flex; flex-direction: column; gap: 3px; }
+        .fit-col-high   { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-start; justify-content: flex-start; }
+        .fit-col-mid    { grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-start; justify-content: flex-end; }
+        .fit-col-center { grid-column: 1 / 3; grid-row: 2; display: flex; align-items: center; justify-content: center; }
+        .fit-col-low    { grid-column: 1; grid-row: 3; display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-start; justify-content: flex-start; }
+        .fit-col-rigs   { grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-start; justify-content: flex-end; }
 
         .fit-slot {
             display: flex;
@@ -545,12 +588,12 @@
             margin-top: 4px;
         }
         .fit-ship-hull {
-            width: 60px; height: 60px;
+            width: 180px; height: 180px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0,224,255,0.14), rgba(0,0,0,0.6));
             border: 1px solid rgba(0,224,255,0.3);
             display: flex; align-items: center; justify-content: center;
-            font-size: 26px;
+            overflow: hidden;
         }
         .fit-rig-row { display: flex; gap: 3px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
         .fit-slot.rig { width: 28px; height: 28px; }
@@ -660,7 +703,11 @@
         <section id="shipsPanel" class="ships-panel">
             <div class="ships-header">
                 <h2 id="shipsPanelTitle">Ships on D-Scan</h2>
-                <span id="shipsMeta" class="pill">0 ships</span>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <button id="collapseAllShips" class="toggle-btn">Collapse All</button>
+                    <button id="expandAllShips" class="toggle-btn">Expand All</button>
+                    <span id="shipsMeta" class="pill">0 ships</span>
+                </div>
             </div>
             <div class="ships-hint" id="shipsHint">
                 Click any ship to see possible pilots, their alliance, and recently lost fits.
@@ -685,6 +732,7 @@
 <div class="fit-popover" id="fitPopover">
     <div class="fit-popover-inner">
         <div class="fit-popover-pilot" id="fitPopoverPilot"></div>
+        <div class="fit-popover-ship" id="fitPopoverShip"></div>
         <div id="fitPopoverDiagram"></div>
         <div class="fit-rig-row" id="fitPopoverRigs"></div>
     </div>
@@ -1454,7 +1502,19 @@ async function handleAnalyze() {
         if (!response.ok) throw new Error('Backend error: ' + response.status);
 
         const data = await response.json();
-        renderResults(data, confirmedPilots, screenshotOnly);
+
+        // Build on-grid counts from original dscan: last column != '-' means visible on grid
+        const onGridCounts = {};
+        if (dscanText) {
+            parseDscan(dscanText).forEach(e => {
+                if (!e.hasDashFlag) {
+                    const key = e.shipType.toLowerCase();
+                    onGridCounts[key] = (onGridCounts[key] || 0) + 1;
+                }
+            });
+        }
+
+        renderResults(data, confirmedPilots, screenshotOnly, onGridCounts);
 
         document.getElementById('inputPanel').classList.add('hidden');
         document.getElementById('shipsPanel').style.display = 'flex';
@@ -1517,8 +1577,23 @@ function buildResistDisplay(stats) {
     return div;
 }
 
+// ── Pilot row collapse toggle ─────────────────────────────────────────────────
+function addPilotToggle(row, topLine) {
+    const chev = document.createElement('span');
+    chev.className = 'pilot-chevron';
+    chev.textContent = '▶';
+    chev.style.transform = 'rotate(90deg)'; // start expanded → ▼
+    topLine.insertBefore(chev, topLine.firstChild);
+    topLine.style.cursor = 'pointer';
+    topLine.addEventListener('click', e => {
+        if (e.target.tagName === 'A') return; // let link clicks pass through
+        row.classList.toggle('pilot-collapsed');
+        chev.style.transform = row.classList.contains('pilot-collapsed') ? '' : 'rotate(90deg)';
+    });
+}
+
 // ── Render results ───────────────────────────────────────────────────────────
-function renderResults(data, confirmed = [], screenshotOnly = false) {
+function renderResults(data, confirmed = [], screenshotOnly = false, onGridCounts = {}) {
     console.log('[renderResults] ships from backend:', data.ships.map(s => `${s.shipName}(${s.count ?? 1})`).join(', '));
     const listEl = document.getElementById('shipList');
     listEl.innerHTML = '';
@@ -1576,6 +1651,13 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
             badge.textContent = `${confirmedForThisShip.length} CONFIRMED ON GRID`;
             nameContainer.appendChild(badge);
         }
+        const onGridCount = onGridCounts[ship.shipName.toLowerCase()] || 0;
+        if (onGridCount) {
+            const badge = document.createElement('span');
+            badge.className = 'on-grid-badge';
+            badge.textContent = `${onGridCount} ON GRID`;
+            nameContainer.appendChild(badge);
+        }
 
         nameRow.appendChild(chevron);
         nameRow.appendChild(nameContainer);
@@ -1595,8 +1677,36 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
         const totalPilots = unconfirmedMatches.length + confirmedWithPilot.length;
         countSpan.textContent = `${ship.count ?? 1}x on scan | ${totalPilots} pilot match${totalPilots !== 1 ? 'es' : ''}`;
 
+        const fitCollapseBtn = document.createElement('button');
+        fitCollapseBtn.className = 'toggle-btn';
+        fitCollapseBtn.textContent = '↑ Fits';
+        fitCollapseBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            details.querySelectorAll('.pilot-row').forEach(r => {
+                r.classList.add('pilot-collapsed');
+                const ch = r.querySelector('.pilot-chevron');
+                if (ch) ch.style.transform = '';
+            });
+        });
+        const fitExpandBtn = document.createElement('button');
+        fitExpandBtn.className = 'toggle-btn';
+        fitExpandBtn.textContent = '↓ Fits';
+        fitExpandBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            details.querySelectorAll('.pilot-row').forEach(r => {
+                r.classList.remove('pilot-collapsed');
+                const ch = r.querySelector('.pilot-chevron');
+                if (ch) ch.style.transform = 'rotate(90deg)';
+            });
+        });
+
+        const shipRightSide = document.createElement('div');
+        shipRightSide.style.cssText = 'display:flex;gap:5px;align-items:center';
+        shipRightSide.appendChild(fitCollapseBtn);
+        shipRightSide.appendChild(fitExpandBtn);
+        shipRightSide.appendChild(countSpan);
         header.appendChild(main);
-        header.appendChild(countSpan);
+        header.appendChild(shipRightSide);
 
         // ── Details ──
         const details = document.createElement('div');
@@ -1650,6 +1760,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false) {
                 line1.appendChild(as);
             }
             row.appendChild(line1);
+            addPilotToggle(row, line1);
 
             // Line 2: Date Lost · Value (as muted sub-line)
             const tagDate = c.dateLost
@@ -1842,6 +1953,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') usageModal.c
 // ── Fit popover ──────────────────────────────────────────────────────────────
 const fitPopover    = document.getElementById('fitPopover');
 const fitPopPilot   = document.getElementById('fitPopoverPilot');
+const fitPopShip    = document.getElementById('fitPopoverShip');
 const fitPopDiagram = document.getElementById('fitPopoverDiagram');
 const fitPopRigs    = document.getElementById('fitPopoverRigs');
 
@@ -1860,6 +1972,8 @@ const invTypeMap = new Map();
             const second = line.indexOf(',', first + 1);
             if (first === -1 || second === -1) continue;
             const typeID   = line.slice(0, first).trim();
+            const groupID  = line.slice(first + 1, second).trim();
+            if (groupID === '83') continue; // skip charges/ammo
             const typeName = line.slice(second + 1).trim()
                 // Remove surrounding quotes if present
                 .replace(/^"(.*)"$/, '$1')
@@ -1881,24 +1995,32 @@ function typeIconUrl(typeName) {
     return `https://images.evetech.net/types/${id}/icon`;
 }
 
-function buildFitDiagram(pilotLabel, fitting) {
+function buildFitDiagram(pilotLabel, fitting, shipName) {
     // Parse fitting into slot buckets — store plain module names (no qty suffix)
     const bySlot = {};
     if (Array.isArray(fitting)) {
         fitting.forEach(item => {
             const s = SLOT_NORM[item.slot] || item.slot;
             if (s === 'Drones') return;
-            if ((item.qty || 1) > 10) return;
+            const count = item.qty || 1;
+            if (count > 10) return; // skip ammo/large stacks
             if (!bySlot[s]) bySlot[s] = [];
-            // Strip qty suffix for display and icon lookup
-            bySlot[s].push(item.typeName.replace(/\s+x\d+$/, '').trim());
+            const baseName = item.typeName.replace(/\s+x\d+$/, '').trim();
+            for (let i = 0; i < count; i++) bySlot[s].push(baseName);
         });
     } else if (fitting && typeof fitting === 'object') {
         for (const [k, v] of Object.entries(fitting)) {
             const s = SLOT_NORM[k] || k;
             if (s === 'Drones') continue;
+            if (!bySlot[s]) bySlot[s] = [];
             const items = Array.isArray(v) ? v : [v];
-            bySlot[s] = items.map(m => m.replace(/\s+x\d+$/, '').trim());
+            items.forEach(m => {
+                const qtyMatch = m.match(/\s+x(\d+)$/);
+                const count = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
+                const baseName = m.replace(/\s+x\d+$/, '').trim();
+                if (count > 10) return; // skip ammo/large stacks
+                for (let i = 0; i < count; i++) bySlot[s].push(baseName);
+            });
         }
     }
 
@@ -1926,85 +2048,85 @@ function buildFitDiagram(pilotLabel, fitting) {
         return d;
     };
 
-    const makeSectionLabel = (text) => {
+    const makeLabel = (text) => {
         const d = document.createElement('div');
-        d.className = 'fit-section-label';
+        d.style.cssText = 'font-size:8px;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);width:100%;margin-bottom:2px;';
         d.textContent = text;
         return d;
     };
 
-    // Left column: High slots
+    // Top-left: High slots
     const colHigh = document.createElement('div');
     colHigh.className = 'fit-col-high';
-    colHigh.appendChild(makeSectionLabel('High'));
+    colHigh.appendChild(makeLabel('High'));
     (bySlot['High'] || []).forEach(m => colHigh.appendChild(makeSlot(m)));
     if (!(bySlot['High'] || []).length) colHigh.appendChild(makeSlot('', true));
 
-    // Right column: Mid slots
+    // Bottom-left: Mid slots
     const colMid = document.createElement('div');
     colMid.className = 'fit-col-mid';
-    colMid.appendChild(makeSectionLabel('Mid'));
+    colMid.appendChild(makeLabel('Mid'));
     (bySlot['Mid'] || []).forEach(m => colMid.appendChild(makeSlot(m)));
     if (!(bySlot['Mid'] || []).length) colMid.appendChild(makeSlot('', true));
 
-    // Center: ship placeholder
+    // Center-top: ship image
     const center = document.createElement('div');
     center.className = 'fit-col-center';
     const hull = document.createElement('div');
     hull.className = 'fit-ship-hull';
-    hull.textContent = '🚀';
+    if (shipName) {
+        const shipId = invTypeMap.get(shipName.toLowerCase());
+        if (shipId && shipId !== '0') {
+            const img = document.createElement('img');
+            img.src = `https://images.evetech.net/types/${shipId}/render`;
+            img.alt = shipName;
+            img.style.cssText = 'width:180px;height:180px;object-fit:cover;';
+            img.onerror = () => { img.remove(); };
+            hull.appendChild(img);
+        }
+    }
     center.appendChild(hull);
 
-    // Low slots
-    const colLow = document.createElement('div');
-    colLow.className = 'fit-col-low';
-    colLow.appendChild(makeSectionLabel('Low'));
-    (bySlot['Low'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
-    if (!(bySlot['Low'] || []).length) colLow.appendChild(makeSlot('', true));
-
-    // Sub slots (T3 cruisers)
-    const colSub = document.createElement('div');
-    colSub.className = 'fit-col-rig';
-    if ((bySlot['Sub'] || []).length) {
-        colSub.appendChild(makeSectionLabel('Sub'));
-        bySlot['Sub'].forEach(m => colSub.appendChild(makeSlot(m)));
-    }
-
-    // Assemble grid
-    const grid = document.createElement('div');
-    grid.className = 'fit-diagram';
-    grid.style.gridTemplateRows = 'auto auto auto auto';
-    grid.appendChild(colHigh);
-    grid.appendChild(center);
-    grid.appendChild(colMid);
-    grid.appendChild(colLow);
-    grid.appendChild(document.createElement('div'));
-    grid.appendChild(colSub);
-
-    // Rig row (horizontal, below grid)
-    const rigRow = document.createElement('div');
-    rigRow.className = 'fit-rig-row';
+    // Center-bottom: Rigs
+    const colRigs = document.createElement('div');
+    colRigs.className = 'fit-col-rigs';
     if ((bySlot['Rig'] || []).length) {
-        const lbl = document.createElement('div');
-        lbl.className = 'fit-section-label';
-        lbl.style.cssText = 'width:100%;text-align:center;margin-bottom:2px';
-        lbl.textContent = 'Rigs';
-        rigRow.appendChild(lbl);
+        colRigs.appendChild(makeLabel('Rig'));
         bySlot['Rig'].forEach(m => {
             const s = makeSlot(m);
             s.classList.add('rig');
-            rigRow.appendChild(s);
+            colRigs.appendChild(s);
         });
     }
+
+    // Right (spanning both rows): Low slots + Sub slots (T3)
+    const colLow = document.createElement('div');
+    colLow.className = 'fit-col-low';
+    colLow.appendChild(makeLabel('Low'));
+    (bySlot['Low'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
+    if (!(bySlot['Low'] || []).length) colLow.appendChild(makeSlot('', true));
+    (bySlot['Sub'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
+
+    // Assemble 2×3 grid
+    const grid = document.createElement('div');
+    grid.className = 'fit-diagram';
+    grid.appendChild(colHigh);   // col 1, row 1 — top-left
+    grid.appendChild(colMid);    // col 2, row 1 — top-right
+    grid.appendChild(center);    // cols 1-2, row 2 — ship (centered)
+    grid.appendChild(colLow);    // col 1, row 3 — bottom-left
+    grid.appendChild(colRigs);   // col 2, row 3 — bottom-right
+
+    const rigRow = document.createElement('div'); // kept for API compat — now empty
 
     return { grid, rigRow };
 }
 
-function showFitPopover(e, pilotLabel, fitting) {
+function showFitPopover(e, pilotLabel, fitting, shipName) {
     fitPopPilot.textContent = pilotLabel;
+    fitPopShip.textContent  = shipName || '';
     fitPopDiagram.innerHTML = '';
     fitPopRigs.innerHTML = '';
-    const { grid, rigRow } = buildFitDiagram(pilotLabel, fitting);
+    const { grid, rigRow } = buildFitDiagram(pilotLabel, fitting, shipName);
     fitPopDiagram.appendChild(grid);
     fitPopRigs.appendChild(rigRow);
     fitPopover.classList.add('visible');
@@ -2033,9 +2155,10 @@ function hideFitPopover() {
 document.getElementById('shipList').addEventListener('mouseover', e => {
     const kmFit = e.target.closest('.km-fit[data-fit-json]');
     if (!kmFit) return;
-    const fitting = JSON.parse(kmFit.dataset.fitJson);
-    const pilot   = kmFit.dataset.fitPilot || '';
-    showFitPopover(e, pilot, fitting);
+    const fitting  = JSON.parse(kmFit.dataset.fitJson);
+    const pilot    = kmFit.dataset.fitPilot || '';
+    const shipName = kmFit.dataset.fitShip  || '';
+    showFitPopover(e, pilot, fitting, shipName);
 });
 document.getElementById('shipList').addEventListener('mousemove', e => {
     if (fitPopover.classList.contains('visible')) positionPopover(e);
