@@ -393,8 +393,7 @@
         .pilot-row.confirmed-pilot-row { background: rgba(0,255,136,0.03); border-radius: 4px; padding: 4px 4px; }
 
         .pilot-top-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .pilot-name { font-weight: 500; color: var(--text-main); text-decoration: none; }
-        .pilot-name:hover { color: var(--accent); text-decoration: underline; }
+        .pilot-name { font-weight: 500; color: var(--text-main); }
         .pilot-alliance { font-size: 11px; color: var(--text-muted); }
         .fit-tag {
             font-size: 11px; padding: 2px 6px; border-radius: 999px;
@@ -597,6 +596,37 @@
         }
         .fit-rig-row { display: flex; gap: 3px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
         .fit-slot.rig { width: 28px; height: 28px; }
+
+        /* ── Fight Detection Banner ── */
+        .fight-banner {
+            margin-bottom: 10px; padding: 10px 14px;
+            border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.12);
+            display: flex; align-items: center; gap: 10px;
+            font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+        }
+        .fight-banner-icon { font-size: 18px; flex-shrink: 0; }
+        .fight-banner-text { flex: 1; }
+        .fight-banner-sub  { font-size: 10px; font-weight: 400; color: var(--text-muted); margin-top: 2px; }
+        .fight-banner.variant-cg    { background: linear-gradient(90deg, rgba(50,130,255,0.14), rgba(40,200,80,0.14)); border-color: rgba(80,180,120,0.35); color: #7dffaa; }
+        .fight-banner.variant-am    { background: linear-gradient(90deg, rgba(255,210,30,0.14), rgba(210,50,50,0.14));  border-color: rgba(200,130,60,0.35); color: #ffd27a; }
+        .fight-banner.variant-multi { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.18); color: var(--text-main); }
+        .fight-banner.variant-single { background: rgba(0,224,255,0.05); border-color: rgba(0,224,255,0.2); color: var(--text-muted); }
+        .fight-banner.variant-unknown { display: none; }
+        .faction-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; padding: 2px 7px; border-radius: 999px;
+            font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;
+        }
+        .faction-chip.caldari  { background: rgba(50,130,255,0.18); border: 1px solid rgba(50,130,255,0.5);  color: #7ab4ff; }
+        .faction-chip.gallente { background: rgba(40,200,80,0.18);  border: 1px solid rgba(40,200,80,0.5);   color: #7dffaa; }
+        .faction-chip.amarr    { background: rgba(255,210,30,0.18);  border: 1px solid rgba(255,210,30,0.5);  color: #ffd27a; }
+        .faction-chip.minmatar { background: rgba(210,50,50,0.18);   border: 1px solid rgba(210,50,50,0.5);   color: #ff8888; }
+        .faction-chip.pirate   { background: rgba(255,130,20,0.12);  border: 1px solid rgba(255,130,20,0.35); color: #ffaa55; }
+        .faction-chip.neutral  { background: rgba(150,150,150,0.12); border: 1px solid rgba(150,150,150,0.3); color: #aaa; }
+        /* ── Kill Recency ── */
+        .recency-fresh  { color: var(--confirmed) !important; }
+        .recency-recent { color: var(--warning) !important; }
+        .recency-stale  { color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -711,6 +741,14 @@
             </div>
             <div class="ships-hint" id="shipsHint">
                 Click any ship to see possible pilots, their alliance, and recently lost fits.
+            </div>
+            <div id="fightBanner" class="fight-banner variant-unknown">
+                <span class="fight-banner-icon" id="fightBannerIcon"></span>
+                <div class="fight-banner-text">
+                    <div id="fightBannerHeadline"></div>
+                    <div class="fight-banner-sub" id="fightBannerSub"></div>
+                </div>
+                <div id="fightBannerChips" style="display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0"></div>
             </div>
             <ul id="shipList" class="ship-list"></ul>
         </section>
@@ -925,6 +963,7 @@ function buildFitLines(fitting) {
             const s = SLOT_NORM[item.slot] || item.slot;
             if (s === 'Drones') return; // exclude drone bay
             if ((item.qty || 1) > 10) return; // exclude large stacks (ammo, etc.)
+            if (isConsumable(item.typeName)) return; // exclude nanite paste, cap boosters, etc.
             if (!bySlot[s]) bySlot[s] = [];
             bySlot[s].push(item.qty > 1 ? `${item.typeName} x${item.qty}` : item.typeName);
         });
@@ -932,7 +971,12 @@ function buildFitLines(fitting) {
         for (const [k, v] of Object.entries(fitting)) {
             const s = SLOT_NORM[k] || k;
             if (s === 'Drones') continue; // exclude drone bay
-            bySlot[s] = v;
+            const items = Array.isArray(v) ? v : [v];
+            const filtered = items.filter(m => {
+                const baseName = m.replace(/\s+x\d+$/, '').trim();
+                return !isConsumable(baseName);
+            });
+            if (filtered.length) bySlot[s] = filtered;
         }
     }
     return SLOT_ORDER
@@ -1586,7 +1630,6 @@ function addPilotToggle(row, topLine) {
     topLine.insertBefore(chev, topLine.firstChild);
     topLine.style.cursor = 'pointer';
     topLine.addEventListener('click', e => {
-        if (e.target.tagName === 'A') return; // let link clicks pass through
         row.classList.toggle('pilot-collapsed');
         chev.style.transform = row.classList.contains('pilot-collapsed') ? '' : 'rotate(90deg)';
     });
@@ -1735,14 +1778,9 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
             badge.textContent = 'CONFIRMED ON GRID';
             line1.appendChild(badge);
 
-            const nameEl = document.createElement('a');
+            const nameEl = document.createElement('span');
             nameEl.className = 'pilot-name';
             nameEl.textContent = c.charLookupFailed ? `${c.pilotName} (parse failed)` : c.pilotName;
-            // const charId = c.charId ?? _bp?.characterId;
-            // nameEl.href = charId
-            //     ? `https://zkillboard.com/character/${charId}/`
-            //     : `https://zkillboard.com/character/search/?q=${encodeURIComponent(c.pilotName)}`;
-            // nameEl.target = '_blank';
             line1.appendChild(nameEl);
 
             const corpName  = c.corporationName || _bp?.corporationName;
@@ -1752,6 +1790,12 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                 cs.className = 'pilot-alliance';
                 cs.textContent = corpName;
                 line1.appendChild(cs);
+            }
+            if (corpName && allyName) {
+                const dot = document.createElement('span');
+                dot.className = 'pilot-alliance';
+                dot.textContent = '·';
+                line1.appendChild(dot);
             }
             if (allyName) {
                 const as = document.createElement('span');
@@ -1837,11 +1881,9 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                     const line1 = document.createElement('div');
                     line1.className = 'pilot-top-line';
 
-                    const nameEl = document.createElement('a');
+                    const nameEl = document.createElement('span');
                     nameEl.className = 'pilot-name';
                     nameEl.textContent = pilot.characterName;
-                    // nameEl.href = `https://zkillboard.com/character/${pilot.characterId}/`;
-                    // nameEl.target = '_blank';
                     line1.appendChild(nameEl);
 
                     if (pilot.corporationName) {
@@ -1849,6 +1891,12 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                         cs.className = 'pilot-alliance';
                         cs.textContent = pilot.corporationName;
                         line1.appendChild(cs);
+                    }
+                    if (pilot.corporationName && pilot.allianceName) {
+                        const dot = document.createElement('span');
+                        dot.className = 'pilot-alliance';
+                        dot.textContent = '·';
+                        line1.appendChild(dot);
                     }
                     if (pilot.allianceName) {
                         const as = document.createElement('span');
