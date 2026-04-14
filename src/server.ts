@@ -4,7 +4,7 @@ import { analyze } from "./analyzer";
 import { AnalyzeRequest } from "./types";
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+const PORT = Number(process.env.PORT) || 3000;
 
 // ── Middleware ───────────────────────────────────────────────────────────────
 
@@ -69,8 +69,8 @@ app.use((_req: Request, res: Response) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`WIWIS backend listening on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`WIWIS backend listening on 0.0.0.0:${PORT}`);
   console.log("Endpoints:");
   console.log("  GET  /health");
   console.log("  POST /analyze");
