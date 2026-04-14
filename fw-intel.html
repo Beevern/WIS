@@ -2055,9 +2055,10 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                 fitLine.className = 'pilot-bottom-line km-fit';
                 fitLine.style.cssText = 'cursor:pointer';
                 fitLine.innerHTML = buildFitLines(fitting);
-                fitLine.dataset.fitJson  = JSON.stringify(fitting);
-                fitLine.dataset.fitPilot = c.pilotName || '';
-                fitLine.dataset.fitShip  = c.shipType || '';
+                fitLine.dataset.fitJson       = JSON.stringify(fitting);
+                fitLine.dataset.fitPilot      = c.pilotName || '';
+                fitLine.dataset.fitShip       = c.shipType || '';
+                fitLine.dataset.fitShipTypeId = String(c.shipTypeId || '');
                 fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                 row.appendChild(fitLine);
             } else if (_bp && _bp.matchedLosses.length > 0) {
@@ -2067,9 +2068,10 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                     fitLine.className = 'pilot-bottom-line km-fit';
                     fitLine.style.cssText = 'cursor:pointer';
                     fitLine.innerHTML = buildFitLines(loss.fitting);
-                    fitLine.dataset.fitJson  = JSON.stringify(loss.fitting);
-                    fitLine.dataset.fitPilot = c.pilotName || '';
-                    fitLine.dataset.fitShip  = c.shipType || '';
+                    fitLine.dataset.fitJson       = JSON.stringify(loss.fitting);
+                    fitLine.dataset.fitPilot      = c.pilotName || '';
+                    fitLine.dataset.fitShip       = c.shipType || '';
+                    fitLine.dataset.fitShipTypeId = String(loss.shipTypeId || '');
                     fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                     row.appendChild(fitLine);
                 });
@@ -2177,9 +2179,10 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                     fitLine.className = 'pilot-bottom-line km-fit';
                     fitLine.style.cssText = 'cursor:pointer';
                     fitLine.innerHTML = buildFitLines(loss.fitting);
-                    fitLine.dataset.fitJson  = JSON.stringify(loss.fitting);
-                    fitLine.dataset.fitPilot = pilot.characterName || '';
-                    fitLine.dataset.fitShip  = ship.shipName || '';
+                    fitLine.dataset.fitJson       = JSON.stringify(loss.fitting);
+                    fitLine.dataset.fitPilot      = pilot.characterName || '';
+                    fitLine.dataset.fitShip       = ship.shipName || '';
+                    fitLine.dataset.fitShipTypeId = String(loss.shipTypeId || ship.shipTypeId || '');
                     fitLine.addEventListener('click', () => window.open(kmUrl, '_blank'));
                     row.appendChild(fitLine);
 
@@ -2325,8 +2328,10 @@ function isConsumable(typeName) {
     return entry ? CHARGE_GROUP_IDS.has(entry.groupID) : false;
 }
 
-function buildFitDiagram(pilotLabel, fitting, shipName) {
-    // Parse fitting into slot buckets — store plain module names (no qty suffix)
+function buildFitDiagram(pilotLabel, fitting, shipName, shipTypeId = null) {
+    // Parse fitting into slot buckets — store {name, typeId} objects.
+    // typeId comes directly from backend FittingItem and is used for icon URLs
+    // without needing an invTypes.csv lookup.
     const bySlot = {};
     if (Array.isArray(fitting)) {
         fitting.forEach(item => {
@@ -2337,7 +2342,7 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
             const baseName = item.typeName.replace(/\s+x\d+$/, '').trim();
             if (isConsumable(baseName)) return;
             if (!bySlot[s]) bySlot[s] = [];
-            for (let i = 0; i < count; i++) bySlot[s].push(baseName);
+            for (let i = 0; i < count; i++) bySlot[s].push({ name: baseName, typeId: item.typeId || null });
         });
     } else if (fitting && typeof fitting === 'object') {
         for (const [k, v] of Object.entries(fitting)) {
@@ -2351,18 +2356,24 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
                 const baseName = m.replace(/\s+x\d+$/, '').trim();
                 if (count > 10) return;
                 if (isConsumable(baseName)) return;
-                for (let i = 0; i < count; i++) bySlot[s].push(baseName);
+                for (let i = 0; i < count; i++) bySlot[s].push({ name: baseName, typeId: null });
             });
         }
     }
 
-    const makeSlot = (name, empty = false) => {
+    // Resolve icon URL: use typeId directly if available, fall back to invTypes.csv lookup.
+    const resolveIconUrl = ({ name, typeId }) => {
+        if (typeId) return `https://images.evetech.net/types/${typeId}/icon`;
+        return typeIconUrl(name);
+    };
+
+    const makeSlot = (entry, empty = false) => {
         const d = document.createElement('div');
         d.className = 'fit-slot' + (empty ? ' empty' : '');
-        d.title = empty ? '(empty)' : name;
+        d.title = empty ? '(empty)' : (entry?.name ?? '');
 
-        if (!empty) {
-            const iconUrl = typeIconUrl(name);
+        if (!empty && entry) {
+            const iconUrl = resolveIconUrl(entry);
             if (iconUrl) {
                 const img = document.createElement('img');
                 img.className = 'fit-slot-icon';
@@ -2392,27 +2403,26 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     colHigh.className = 'fit-col-high';
     colHigh.appendChild(makeLabel('High', 'left'));
     (bySlot['High'] || []).forEach(m => colHigh.appendChild(makeSlot(m)));
-    if (!(bySlot['High'] || []).length) colHigh.appendChild(makeSlot('', true));
+    if (!(bySlot['High'] || []).length) colHigh.appendChild(makeSlot(null, true));
 
     // Top-right: Mid slots
     const colMid = document.createElement('div');
     colMid.className = 'fit-col-mid';
     colMid.appendChild(makeLabel('Mid', 'right'));
     (bySlot['Mid'] || []).forEach(m => colMid.appendChild(makeSlot(m)));
-    if (!(bySlot['Mid'] || []).length) colMid.appendChild(makeSlot('', true));
+    if (!(bySlot['Mid'] || []).length) colMid.appendChild(makeSlot(null, true));
 
     // Center-top: ship image
     const center = document.createElement('div');
     center.className = 'fit-col-center';
     const hull = document.createElement('div');
     hull.className = 'fit-ship-hull';
-    if (shipName) {
-        const shipEntry = invTypeMap.get(shipName.toLowerCase());
-        const shipId = shipEntry?.id;
+    if (shipName || shipTypeId) {
+        const shipId = shipTypeId || invTypeMap.get(shipName?.toLowerCase())?.id;
         if (shipId && shipId !== '0') {
             const img = document.createElement('img');
             img.src = `https://images.evetech.net/types/${shipId}/render`;
-            img.alt = shipName;
+            img.alt = shipName || '';
             img.style.cssText = 'width:180px;height:180px;object-fit:cover;';
             img.onerror = () => {
                 if (img.src.includes('/render')) {
@@ -2444,7 +2454,7 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     colLow.className = 'fit-col-low';
     colLow.appendChild(makeLabel('Low'));
     (bySlot['Low'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
-    if (!(bySlot['Low'] || []).length) colLow.appendChild(makeSlot('', true));
+    if (!(bySlot['Low'] || []).length) colLow.appendChild(makeSlot(null, true));
     (bySlot['Sub'] || []).forEach(m => colLow.appendChild(makeSlot(m)));
 
     // Assemble 2×3 grid
@@ -2461,12 +2471,12 @@ function buildFitDiagram(pilotLabel, fitting, shipName) {
     return { grid, rigRow };
 }
 
-function showFitPopover(e, pilotLabel, fitting, shipName) {
+function showFitPopover(e, pilotLabel, fitting, shipName, shipTypeId = null) {
     fitPopPilot.textContent = pilotLabel;
     fitPopShip.textContent  = shipName || '';
     fitPopDiagram.innerHTML = '';
     fitPopRigs.innerHTML = '';
-    const { grid, rigRow } = buildFitDiagram(pilotLabel, fitting, shipName);
+    const { grid, rigRow } = buildFitDiagram(pilotLabel, fitting, shipName, shipTypeId);
     fitPopDiagram.appendChild(grid);
     fitPopRigs.appendChild(rigRow);
     fitPopover.classList.add('visible');
@@ -2495,10 +2505,11 @@ function hideFitPopover() {
 document.getElementById('shipList').addEventListener('mouseover', e => {
     const kmFit = e.target.closest('.km-fit[data-fit-json]');
     if (!kmFit) return;
-    const fitting  = JSON.parse(kmFit.dataset.fitJson);
-    const pilot    = kmFit.dataset.fitPilot || '';
-    const shipName = kmFit.dataset.fitShip  || '';
-    showFitPopover(e, pilot, fitting, shipName);
+    const fitting     = JSON.parse(kmFit.dataset.fitJson);
+    const pilot       = kmFit.dataset.fitPilot      || '';
+    const shipName    = kmFit.dataset.fitShip        || '';
+    const shipTypeId  = kmFit.dataset.fitShipTypeId  || null;
+    showFitPopover(e, pilot, fitting, shipName, shipTypeId);
 });
 document.getElementById('shipList').addEventListener('mousemove', e => {
     if (fitPopover.classList.contains('visible')) positionPopover(e);

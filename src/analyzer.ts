@@ -5,6 +5,7 @@ import {
   PilotMatch,
   RecentLoss,
   ParsedDscan,
+  ZkillEntry,
 } from "./types";
 import {
   resolveCharacterNames,
@@ -171,7 +172,7 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
         return;
       }
 
-      const cutoff = Date.now() - 180 * 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
 
       const char = await getCharacter(characterId);
 
@@ -188,37 +189,22 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
       }
 
       const matchedLosses: RecentLoss[] = [];
-      // lastKillTime: most recent kill by this pilot on any ship, within the window
-      let lastKillTime: string | undefined;
 
-      // Fetch most-recent kill for this pilot (once per pilot, not per ship)
-      // Best-effort — wrapped so a failure never aborts loss matching
-      try {
-        const killEntries = await getCharacterShipKills(characterId, cutoff);
-        if (killEntries.length > 0 && killEntries[0].killmail_time) {
-          lastKillTime = killEntries[0].killmail_time;
-        }
-      } catch { /* ignore */ }
+      const killEntries = await getCharacterShipKills(characterId, cutoff).catch((): ZkillEntry[] => []);
+      const lastKillTime = killEntries[0]?.killmail_time;
 
-      // Query zkill once per (pilot, shipType) pair — server-side filtered,
-      // so we only receive killmails that are actually relevant.
       const resolvedShips = Array.from(shipTypeIds.entries())
         .filter((entry): entry is [string, number] => entry[1] !== null);
 
       await Promise.all(
         resolvedShips.map(async ([shipName, typeId]) => {
-          // Fetch losses (existing behaviour)
           const zkEntries = await getCharacterShipLosses(characterId, typeId, cutoff);
           console.log(`  [zkill] ${pilotName} × ${shipName}: ${zkEntries.length} losses`);
-
           await Promise.all(
-            zkEntries.map(async (zkEntry) => {
+            zkEntries.map(async (zkEntry: ZkillEntry) => {
               const km = await getKillmail(zkEntry.killmail_id, zkEntry.zkb.hash);
-              // Use ESI killmail time if available, fall back to zkill's own timestamp
               const killmailTime = km?.killmail_time ?? zkEntry.killmail_time;
-              if (!killmailTime) return;
-              if (new Date(killmailTime).getTime() < cutoff) return;
-
+              if (!killmailTime || new Date(killmailTime).getTime() < cutoff) return;
               const fitting = km ? await parseFitting(km.victim.items ?? []) : [];
               matchedLosses.push({
                 killmailId: zkEntry.killmail_id,
@@ -231,8 +217,6 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
               });
             })
           );
-
-          // (kills are fetched once per pilot above, not per ship type)
         })
       );
 

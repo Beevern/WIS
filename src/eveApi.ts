@@ -60,10 +60,10 @@ const esi: AxiosInstance = axios.create({
 // zKillboard requires a descriptive User-Agent
 const zkill: AxiosInstance = axios.create({
   baseURL: ZKILL_BASE,
-  timeout: 15_000,
+  timeout: 10_000,
   headers: {
     "Accept": "application/json",
-    "User-Agent": "WIWIS FW Intel Tool - contact your_email@example.com",
+    "User-Agent": "WIWIS FW Intel Tool - contact ign Riot Mar",
   },
 });
 
@@ -372,48 +372,88 @@ export async function getShipStats(typeId: number): Promise<ShipStats | null> {
 
 // ── zKillboard helpers ──────────────────────────────────────────────────────
 
-
 /**
  * Fetch losses for a specific character + ship type from zKillboard.
- * Uses characterID + shipTypeID filters (both proven to work).
- * Paginates newest-first and stops as soon as a page contains an entry
- * older than sinceMs, so we never over-fetch.
+ * Returns quickly with [] when the pilot hasn't lost that ship type — avoids
+ * the wasted ESI killmail fetches that come with the unfiltered all-losses approach.
  */
 export async function getCharacterShipLosses(
   characterId: number,
   shipTypeId: number,
   sinceMs: number
 ): Promise<ZkillEntry[]> {
-  const cacheHour = Math.floor(sinceMs / (60 * 60 * 1000));
+  const cacheHour = Math.floor(Date.now() / (60 * 60 * 1000));
   const key = `losses:${characterId}:${shipTypeId}:${cacheHour}`;
   const cached = zkillCache.get(key);
   if (cached) return cached;
 
   const all: ZkillEntry[] = [];
-  for (let page = 1; page <= 10; page++) {
+  for (let page = 1; page <= 5; page++) {
     try {
       const resp = await zkillSem.run(() => retry(() =>
         zkill.get<ZkillEntry[]>(
           `/losses/characterID/${characterId}/shipTypeID/${shipTypeId}/page/${page}/`
         )
       ));
-      const entries = resp.data ?? [];
+      const entries = Array.isArray(resp.data) ? resp.data : [];
       if (entries.length === 0) break;
 
-      // zkill returns newest-first; stop once we hit entries older than the window
-      const withinWindow = entries.filter(e => {
-        if (!e.killmail_time) return true; // keep if date unknown, filter later
-        return new Date(e.killmail_time).getTime() >= sinceMs;
-      });
+      const withinWindow = entries.filter(e =>
+        !e.killmail_time || new Date(e.killmail_time).getTime() >= sinceMs
+      );
       all.push(...withinWindow);
 
-      // If any entry on this page was outside the window we've covered the cutoff
       const hitCutoff = entries.some(
         e => e.killmail_time && new Date(e.killmail_time).getTime() < sinceMs
       );
       if (hitCutoff || entries.length < 200) break;
     } catch (err: any) {
-      console.warn(`zKill fetch failed for char=${characterId} ship=${shipTypeId}:`, err?.message);
+      console.warn(`zKill ship-losses fetch failed for char=${characterId} ship=${shipTypeId}:`, err?.message);
+      break;
+    }
+  }
+
+  zkillCache.set(key, all, ZKILL_TTL);
+  return all;
+}
+
+/**
+ * Fetch ALL recent losses for a character from zKillboard (no ship type filter).
+ * One call per pilot instead of one call per (pilot × ship type).
+ * The analyzer filters by ship type after fetching the ESI killmail.
+ */
+export async function getCharacterAllLosses(
+  characterId: number,
+  sinceMs: number
+): Promise<ZkillEntry[]> {
+  const cacheHour = Math.floor(Date.now() / (60 * 60 * 1000));
+  const key = `alllosses:${characterId}:${cacheHour}`;
+  const cached = zkillCache.get(key);
+  if (cached) return cached;
+
+  const all: ZkillEntry[] = [];
+  for (let page = 1; page <= 5; page++) {
+    try {
+      const resp = await zkillSem.run(() => retry(() =>
+        zkill.get<ZkillEntry[]>(
+          `/losses/characterID/${characterId}/page/${page}/`
+        )
+      ));
+      const entries = Array.isArray(resp.data) ? resp.data : [];
+      if (entries.length === 0) break;
+
+      // zKill returns newest-first; stop once we pass the cutoff
+      const withinWindow = entries.filter(e =>
+        !e.killmail_time || new Date(e.killmail_time).getTime() >= sinceMs
+      );
+      all.push(...withinWindow);
+
+      const hitCutoff = entries.some(
+        e => e.killmail_time && new Date(e.killmail_time).getTime() < sinceMs
+      );
+      if (hitCutoff || entries.length < 200) break;
+    } catch (err: any) {
+      console.warn(`zKill all-losses fetch failed for char=${characterId}:`, err?.message);
       break;
     }
   }
@@ -443,7 +483,7 @@ export async function getCharacterShipKills(
         `/kills/characterID/${characterId}/page/1/`
       )
     ));
-    const entries = resp.data ?? [];
+    const entries = Array.isArray(resp.data) ? resp.data : [];
     const withinWindow = entries.filter(e => {
       if (!e.killmail_time) return true;
       return new Date(e.killmail_time).getTime() >= sinceMs;
@@ -477,7 +517,8 @@ export async function getKillmail(
     );
     kmCache.set(key, resp.data, 24 * 60 * 60 * 1000);
     return resp.data;
-  } catch {
+  } catch (err: any) {
+    console.warn(`getKillmail failed for ${killmailId}:`, err?.message);
     return null;
   }
 }

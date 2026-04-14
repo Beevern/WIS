@@ -19,9 +19,15 @@ app.get("/", (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "../fw-intel.html"));
 });
 
+app.get("/invTypes.csv", (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, "../invTypes.csv"));
+});
+
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+const ANALYZE_TIMEOUT_MS = 120_000;
 
 app.post("/analyze", async (req: Request, res: Response) => {
   const body = req.body as Partial<AnalyzeRequest>;
@@ -36,16 +42,28 @@ app.post("/analyze", async (req: Request, res: Response) => {
     return;
   }
 
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("analysis_timeout")), ANALYZE_TIMEOUT_MS)
+  );
+
   try {
-    const result = await analyze({
-      localPaste: body.localPaste,
-      dscanPaste: body.dscanPaste,
-      stationPaste: body.stationPaste,
-    });
+    const result = await Promise.race([
+      analyze({
+        localPaste: body.localPaste,
+        dscanPaste: body.dscanPaste,
+        stationPaste: body.stationPaste,
+      }),
+      timeoutPromise,
+    ]);
     res.json(result);
   } catch (err: any) {
-    console.error("Analysis error:", err);
-    res.status(500).json({ error: "Internal server error", detail: err?.message });
+    if (err?.message === "analysis_timeout") {
+      console.warn("Analysis timed out after", ANALYZE_TIMEOUT_MS, "ms");
+      res.status(503).json({ error: "Analysis timed out — try with fewer pilots or a smaller d-scan angle." });
+    } else {
+      console.error("Analysis error:", err);
+      res.status(500).json({ error: "Internal server error", detail: err?.message });
+    }
   }
 });
 
