@@ -711,14 +711,7 @@
                             <div id="confirmedPreviewList"></div>
                         </div>
 
-                        <details id="ocrDebugWrap" style="display:none;margin-top:6px;">
-                            <summary style="cursor:pointer;font-size:11px;color:var(--muted);user-select:none;">OCR raw text (debug)</summary>
-                            <textarea id="ocrDebugText" readonly
-                                style="width:100%;height:120px;margin-top:4px;font-size:10px;
-                                       font-family:monospace;background:var(--bg-card);
-                                       color:var(--muted);border:1px solid var(--border);
-                                       border-radius:4px;padding:4px;resize:vertical;box-sizing:border-box;"></textarea>
-                        </details>
+
                     </article>
                 </div>
             </div>
@@ -820,7 +813,7 @@
 
             <section class="wip section">
             <div class="card">
-                <h2>Fight Analyzer</h2>
+                <h2>Are they fighting?</h2>
                 <p><strong>WIP</strong> - Coming soon!</p>
             </div>
             </section>
@@ -1234,7 +1227,6 @@ function clearScreenshot() {
     document.getElementById('clearSsBtn').classList.add('hidden');
     document.getElementById('ocrStatus').style.display       = 'none';
     document.getElementById('confirmedPreview').style.display = 'none';
-    document.getElementById('ocrDebugWrap').style.display     = 'none';
 }
 
 // ── OCR ──────────────────────────────────────────────────────────────────────
@@ -1256,17 +1248,6 @@ async function runOCR(dataUrl) {
         });
 
         statusTxt.textContent = 'Parsing EVE data…';
-        console.group('[OCR] Raw Tesseract output');
-        console.log(text);
-        console.groupEnd();
-
-        // Show raw OCR text in the debug panel
-        const dbgWrap = document.getElementById('ocrDebugWrap');
-        const dbgText = document.getElementById('ocrDebugText');
-        if (dbgWrap && dbgText) {
-            dbgWrap.style.display = '';
-            dbgText.value = text;
-        }
 
         const localPilots = parsePilotsBlock(document.getElementById('guestInput').value);
         confirmedPilots   = parseEVEText(text, localPilots);
@@ -1815,9 +1796,20 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
     const listEl = document.getElementById('shipList');
     listEl.innerHTML = '';
 
+    // Deduplicate confirmed pilots: each named pilot is assigned to their first ship only.
+    // This prevents a pilot from appearing under multiple ships if OCR produced duplicate entries.
+    const seenConfirmedPilots = new Set();
+    const confirmedDeduped = confirmed.filter(c => {
+        if (!c.pilotName) return true; // unnamed entries always pass through
+        const key = c.pilotName.toLowerCase();
+        if (seenConfirmedPilots.has(key)) return false;
+        seenConfirmedPilots.add(key);
+        return true;
+    });
+
     // Build lookup: pilotName (lower) → confirmed OCR info
     const confirmedMap = new Map();
-    confirmed.forEach(c => { if (c.pilotName) confirmedMap.set(c.pilotName.toLowerCase(), c); });
+    confirmedDeduped.forEach(c => { if (c.pilotName) confirmedMap.set(c.pilotName.toLowerCase(), c); });
 
     // Confirmed pilot names (lower) — used to remove them from the unconfirmed pool
     const confirmedPilotNamesLower = new Set(confirmedMap.keys());
@@ -1859,18 +1851,29 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
         }
         return t;
     };
-    const sortedShips = [...data.ships].sort((a, b) => mostRecentLossTime(b) - mostRecentLossTime(a));
+    const sortedShips = [...data.ships].sort((a, b) => a.shipName.localeCompare(b.shipName));
     sortedShips.forEach(ship => {
         // Skip rookie / irrelevant ships
         if (ROOKIE_SHIPS.has(ship.shipName.toLowerCase())) return;
 
         // All screenshot entries matching this ship type (pilot name not required)
         // Use fuzzy match: exact OR one starts-with the other (handles OCR/dscan truncation)
-        const confirmedForThisShip = confirmed.filter(c => {
+        let confirmedForThisShip = confirmedDeduped.filter(c => {
             const a = c.shipType.toLowerCase();
             const b = ship.shipName.toLowerCase();
             return a === b || a.startsWith(b) || b.startsWith(a);
         });
+
+        // Sanity-check: if OCR found more of this ship than dscan shows, cap to dscan count.
+        // Combat recons (curse, huginn, lachesis, rook) are exempt — they hide from dscan.
+        const COMBAT_RECONS = new Set(['curse', 'huginn', 'lachesis', 'rook']);
+        if (!screenshotOnly && !COMBAT_RECONS.has(ship.shipName.toLowerCase())) {
+            const dscanCount = ship.count ?? 1;
+            if (confirmedForThisShip.length > dscanCount) {
+                confirmedForThisShip = confirmedForThisShip.slice(0, dscanCount);
+            }
+        }
+
         // Subset that have an identified pilot name
         const confirmedWithPilot = confirmedForThisShip.filter(c => c.pilotName);
 
