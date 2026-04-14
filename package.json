@@ -1,5 +1,5 @@
 {
-  "name": "wiwis-backend",
+  "name": "wis-backend",
   "version": "1.0.0",
   "description": "",
   "main": "dist/server.js",

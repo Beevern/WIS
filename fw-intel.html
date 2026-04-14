@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>What are you in?</title>
+    <title>Who's in Space?</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
         :root {
@@ -1594,11 +1594,7 @@ async function handleAnalyze() {
         const effectiveLocal = confirmedNames.length
             ? (guestText ? guestText + '\n' : '') + confirmedNames.join('\n')
             : guestText;
-        const API_BASE =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1"
-    ? "http://localhost:3000"
-    : "https://wis.fly.dev";
-        const response = await fetch(`${API_BASE}/analyze`, {
+        const response = await fetch("/analyze", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
