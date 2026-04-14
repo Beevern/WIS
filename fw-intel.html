@@ -761,7 +761,69 @@
         <button class="modal-close" id="usageModalClose">✕</button>
         <div class="modal-title">How to Use</div>
         <div class="modal-body">
-            <p>PLACEHOLDER PLACEHOLDER</p>
+            <section class="hero section">
+            <h1>EVE D-Scan Pilot Matcher</h1>
+            <p>This tool helps low-sec PvP-ers match ships on d-scan to pilots in local to see their fit.</p>
+            </section>
+
+            <section class="usage section">
+            <h2>Best Practices</h2>
+            <p>It works best when there are not too many pilots, as that will make determining who is flying what more difficult. Long pastes will also increase analyzing time.</p>
+            <p><strong>Therefore, reducing the angle/range of d-scan and using station paste to remove docked pilots will help lots.</strong></p>
+            </section>
+
+            <section class="inputs section">
+            <h2>Paste Screen</h2>
+            <p>There are 4 inputs: d-scan, local, station guest list (optional), screenshot of overview (optional).</p>
+            
+            <div class="features">
+                <div class="card">
+                <h3><i data-lucide="copy"></i> D-Scan & Local</h3>
+                <p>Simply copy and paste. These are the most important pastes for scans.</p>
+                </div>
+                <div class="card">
+                <h3><i data-lucide="anchor"></i> Guest List</h3>
+                <p>An optional paste of the station guest list to remove capsuleers who are docked from analyzation since they aren't in space.</p>
+                </div>
+                <div class="card">
+                <h3><i data-lucide="image"></i> Screenshot</h3>
+                <p>A screenshot of overview that confirms pilots' presence and matches them to a ship. In the case that the pilot name is parsed incorrectly, you can edit it.</p>
+                <p><em>You can do a screenshot-only scan to see their fits quickly.</em></p>
+                </div>
+            </div>
+            </section>
+
+            <section class="results section">
+            <h2>Results Screen</h2>
+            <p>A list of ships (in alphabetical order) will be displayed.</p>
+            
+            <ul>
+                <li>The number of each ship and number of pilot matches are displayed on the right.</li>
+                <li>Beside the ship name, there may be orange and/or green indicators to convey certain information:
+                <ul>
+                    <li class="indicator match-confirmed"><i data-lucide="check-circle"></i> Green "Match confirmed" shows how many pilots have been matched to that ship (through screenshot)</li>
+                    <li class="indicator on-grid"><i data-lucide="target"></i> Orange "On grid" shows how many of this ship is on grid (through d-scan)</li>
+                </ul>
+                </li>
+                <li>Base resistances of that ship are shown.</li>
+                <li>A list of capsuleers who have previously used/lost this ship will be displayed:
+                <ul>
+                    <li>In order of activity, with most recent activity at the top</li>
+                    <li>If that pilot was confirmed through screenshot, a green indicator will be beside their name</li>
+                    <li>For each capsuleer, their name, corp, alliance, faction, date/value/fit of last lost are displayed</li>
+                    <li>Hovering over the fit will provide a visual representation</li>
+                    <li>Clicking it will link to the zKill page</li>
+                </ul>
+                </li>
+            </ul>
+            </section>
+
+            <section class="wip section">
+            <div class="card">
+                <h2>Fight Analyzer</h2>
+                <p><strong>WIP</strong> - Coming soon!</p>
+            </div>
+            </section>
         </div>
     </div>
 </div>
@@ -1635,6 +1697,119 @@ function addPilotToggle(row, topLine) {
     });
 }
 
+// ── Last-activity helper ──────────────────────────────────────────────────────
+// Returns the most recent timestamp (ms) across losses and kills for a pilot match.
+function lastActivityTime(pilot) {
+    let t = 0;
+    (pilot.matchedLosses || []).forEach(l => {
+        const lt = new Date(l.killmailTime).getTime();
+        if (lt > t) t = lt;
+    });
+    if (pilot.lastKillTime) {
+        const kt = new Date(pilot.lastKillTime).getTime();
+        if (kt > t) t = kt;
+    }
+    return t;
+}
+
+// Returns {date, label, recencyClass} for display
+function lastActivityInfo(pilot) {
+    let bestTime = 0;
+    let bestLabel = '';
+    (pilot.matchedLosses || []).forEach(l => {
+        const lt = new Date(l.killmailTime).getTime();
+        if (lt > bestTime) { bestTime = lt; bestLabel = 'lost'; }
+    });
+    if (pilot.lastKillTime) {
+        const kt = new Date(pilot.lastKillTime).getTime();
+        if (kt > bestTime) { bestTime = kt; bestLabel = 'killed'; }
+    }
+    if (!bestTime) return null;
+    const date = new Date(bestTime);
+    const ageMs = Date.now() - bestTime;
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+    const recencyClass = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
+    return { date, label: bestLabel, recencyClass };
+}
+
+// ── Fight banner renderer ─────────────────────────────────────────────────────
+// factionTally: { factionKey: count, ... }
+const FACTION_DISPLAY = {
+    amarr:    { label: 'Amarr',    cls: 'amarr' },
+    minmatar: { label: 'Minmatar', cls: 'minmatar' },
+    caldari:  { label: 'Caldari',  cls: 'caldari' },
+    gallente: { label: 'Gallente', cls: 'gallente' },
+    angel:    { label: 'Angels',   cls: 'pirate' },
+    guristas: { label: 'Guristas', cls: 'pirate' },
+};
+function renderFightBanner(tally) {
+    /*
+    const banner = document.getElementById('fightBanner');
+    const iconEl = document.getElementById('fightBannerIcon');
+    const headEl = document.getElementById('fightBannerHeadline');
+    const subEl  = document.getElementById('fightBannerSub');
+    const chipsEl = document.getElementById('fightBannerChips');
+
+    const entries = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) {
+        banner.className = 'fight-banner variant-unknown';
+        return;
+    }
+
+    // Total matched pilots
+    const total = entries.reduce((s, [,v]) => s + v, 0);
+
+    // Determine dominant factions
+    const fwFactions = ['caldari','gallente','amarr','minmatar'];
+    const fwPresent = entries.filter(([k]) => fwFactions.includes(k));
+    const sides = fwPresent.map(([k]) => k);
+
+    let variant = 'variant-single';
+    let icon = '🛸';
+    let headline = 'Activity Detected';
+    let sub = `${total} pilot match${total !== 1 ? 'es' : ''} across all ships`;
+
+    if (sides.includes('caldari') && sides.includes('gallente')) {
+        variant = 'variant-cg'; icon = '⚔️';
+        headline = 'Caldari vs Gallente';
+        sub = `${total} matched pilot${total !== 1 ? 's' : ''} across all ships on scan`;
+    } else if (sides.includes('amarr') && sides.includes('minmatar')) {
+        variant = 'variant-am'; icon = '⚔️';
+        headline = 'Amarr vs Minmatar';
+        sub = `${total} matched pilot${total !== 1 ? 's' : ''} across all ships on scan`;
+    } else if (fwPresent.length > 1) {
+        variant = 'variant-multi'; icon = '⚔️';
+        headline = 'Multi-Faction';
+        sub = `${total} matched pilot${total !== 1 ? 's' : ''} across all ships on scan`;
+    } else if (entries.length === 1) {
+        variant = 'variant-single'; icon = '🛸';
+        const fd = FACTION_DISPLAY[entries[0][0]];
+        headline = fd ? fd.label : entries[0][0];
+        sub = `${total} matched pilot${total !== 1 ? 's' : ''} across all ships on scan`;
+    } else {
+        variant = 'variant-multi'; icon = '🛸';
+        headline = 'Mixed Forces';
+        sub = `${total} matched pilot${total !== 1 ? 's' : ''} across all ships on scan`;
+    }
+
+    banner.className = `fight-banner ${variant}`;
+    iconEl.textContent = icon;
+    headEl.textContent = headline;
+    subEl.textContent = sub;
+
+    // Faction count chips
+    chipsEl.innerHTML = '';
+    entries.forEach(([fKey, count]) => {
+        const fd = FACTION_DISPLAY[fKey];
+        if (!fd) return;
+        const chip = document.createElement('span');
+        chip.className = `faction-chip ${fd.cls}`;
+        chip.textContent = `${fd.label} ×${count}`;
+        chipsEl.appendChild(chip);
+    });
+    */
+}
+
 // ── Render results ───────────────────────────────────────────────────────────
 function renderResults(data, confirmed = [], screenshotOnly = false, onGridCounts = {}) {
     console.log('[renderResults] ships from backend:', data.ships.map(s => `${s.shipName}(${s.count ?? 1})`).join(', '));
@@ -1653,7 +1828,39 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
         ? `${confirmed.length} confirmed · screenshot only`
         : `${data.ships.length} distinct ships | ${data.inSpacePilots?.length ?? 0} pilots in space`;
 
-    const sortedShips = [...data.ships].sort((a, b) => (a.shipName || '').localeCompare(b.shipName || ''));
+    // ── Fight banner: tally factions from top-X pilots per ship ──────────────
+    // For each ship, take the top (ship.count) pilots sorted by most-recent activity.
+    // Detect their faction and accumulate counts.
+    const factionTally = {};  // factionKey → count
+    const sortedShipsForBanner = (data.ships || []).filter(s => !ROOKIE_SHIPS.has(s.shipName.toLowerCase()));
+    sortedShipsForBanner.forEach(ship => {
+        const allPilotsForShip = [...(ship.matchedPilots || [])];
+        // Sort by most recent activity (kill or loss), newest first
+        allPilotsForShip.sort((a, b) => {
+            const aTime = lastActivityTime(a);
+            const bTime = lastActivityTime(b);
+            return bTime - aTime;
+        });
+        const slotCount = ship.count ?? 1;
+        const topPilots = allPilotsForShip.slice(0, slotCount);
+        topPilots.forEach(pilot => {
+            const fKey = detectFaction(pilot.allianceName, pilot.corporationName);
+            if (fKey) factionTally[fKey] = (factionTally[fKey] || 0) + 1;
+        });
+    });
+    renderFightBanner(factionTally);
+
+    const mostRecentLossTime = ship => {
+        let t = 0;
+        for (const p of (ship.matchedPilots || [])) {
+            for (const l of (p.matchedLosses || [])) {
+                const lt = new Date(l.killmailTime).getTime();
+                if (lt > t) t = lt;
+            }
+        }
+        return t;
+    };
+    const sortedShips = [...data.ships].sort((a, b) => mostRecentLossTime(b) - mostRecentLossTime(a));
     sortedShips.forEach(ship => {
         // Skip rookie / irrelevant ships
         if (ROOKIE_SHIPS.has(ship.shipName.toLowerCase())) return;
@@ -1691,7 +1898,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
         if (confirmedForThisShip.length) {
             const badge = document.createElement('span');
             badge.className = 'confirmed-badge';
-            badge.textContent = `${confirmedForThisShip.length} CONFIRMED ON GRID`;
+            badge.textContent = `${confirmedForThisShip.length} MATCH CONFIRMED`;
             nameContainer.appendChild(badge);
         }
         const onGridCount = onGridCounts[ship.shipName.toLowerCase()] || 0;
@@ -1714,9 +1921,17 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
         (ship.matchedPilots || []).forEach(mp => pilotFitsMap.set(mp.characterName.toLowerCase(), mp));
 
         // Unconfirmed pool excludes pilots we know from the screenshot
-        const unconfirmedMatches = (ship.matchedPilots || []).filter(
-            p => !confirmedPilotNamesLower.has(p.characterName.toLowerCase())
-        );
+        const unconfirmedMatches = (ship.matchedPilots || [])
+            .filter(p => !confirmedPilotNamesLower.has(p.characterName.toLowerCase()))
+            .sort((a, b) => {
+                const aTime = a.matchedLosses?.length
+                    ? Math.max(...a.matchedLosses.map(l => new Date(l.killmailTime).getTime()))
+                    : 0;
+                const bTime = b.matchedLosses?.length
+                    ? Math.max(...b.matchedLosses.map(l => new Date(l.killmailTime).getTime()))
+                    : 0;
+                return bTime - aTime;
+            });
         const totalPilots = unconfirmedMatches.length + confirmedWithPilot.length;
         countSpan.textContent = `${ship.count ?? 1}x on scan | ${totalPilots} pilot match${totalPilots !== 1 ? 'es' : ''}`;
 
@@ -1769,13 +1984,13 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                 : (_bp ? detectFaction(_bp.allianceName, _bp.corporationName) : null);
             if (_fKey) row.style.backgroundColor = FACTION_BG[_fKey];
 
-            // Line 1: [CONFIRMED ON GRID] Name  Corp  Alliance
+            // Line 1: [MATCH CONFIRMED] Name  Corp  Alliance
             const line1 = document.createElement('div');
             line1.className = 'pilot-top-line';
 
             const badge = document.createElement('span');
             badge.className = 'confirmed-badge';
-            badge.textContent = 'CONFIRMED ON GRID';
+            badge.textContent = 'MATCH CONFIRMED';
             line1.appendChild(badge);
 
             const nameEl = document.createElement('span');
@@ -1806,19 +2021,28 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
             row.appendChild(line1);
             addPilotToggle(row, line1);
 
-            // Line 2: Date Lost · Value (as muted sub-line)
+            // Single line: Lost [date] · [value] · last active [date] (color coded)
+            const _lossForActivity = c.recentLoss || (_bp?.matchedLosses?.[0] ?? null);
+            const _lossTime = _lossForActivity ? new Date(_lossForActivity.killmailTime).getTime() : 0;
+            const _actTime = _lossTime; // confirmed pilots don't have lastKillTime from OCR path
             const tagDate = c.dateLost
-                || (c.recentLoss?.killmailTime ? new Date(c.recentLoss.killmailTime).toLocaleDateString() : null);
-            const tagVal  = c.valueISK ?? c.recentLoss?.totalValue;
-            if (tagDate || tagVal) {
-                const line2 = document.createElement('div');
-                line2.className = 'pilot-bottom-line';
-                line2.style.cssText = 'margin-top:1px;margin-bottom:3px';
+                || (_lossForActivity?.killmailTime ? new Date(_lossForActivity.killmailTime).toLocaleDateString() : null);
+            const tagVal  = c.valueISK ?? _lossForActivity?.totalValue;
+            if (tagDate || tagVal || _actTime) {
+                const _ageMs = _actTime ? Date.now() - _actTime : null;
+                const _ageDays = _ageMs != null ? _ageMs / (1000 * 60 * 60 * 24) : null;
+                const _rc = _ageDays == null ? 'recency-stale' : _ageDays <= 7 ? 'recency-fresh' : _ageDays <= 30 ? 'recency-recent' : 'recency-stale';
+                const _actDate = _actTime ? new Date(_actTime).toLocaleDateString() : null;
+                const lineLoss = document.createElement('div');
+                lineLoss.className = 'pilot-bottom-line';
+                lineLoss.style.cssText = 'margin-top:1px;margin-bottom:3px';
                 const parts = [];
                 if (tagDate) parts.push(`Lost ${tagDate}`);
                 if (tagVal)  parts.push(formatISK(tagVal));
-                line2.textContent = parts.join(' · ');
-                row.appendChild(line2);
+                let html = parts.join(' · ');
+                if (_actDate) html += ` · <span class="${_rc}">last activity (loss) ${_actDate}</span>`;
+                lineLoss.innerHTML = html;
+                row.appendChild(lineLoss);
             }
 
             // Lines 3+: Fit
@@ -1908,22 +2132,42 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                     addPilotToggle(row, line1);
 
                     if (!loss) {
-                        const noFit = document.createElement('div');
-                        noFit.className = 'pilot-bottom-line placeholder';
-                        noFit.style.marginTop = '1px';
-                        noFit.textContent = 'No recent losses on record';
-                        row.appendChild(noFit);
+                        if (pilot.lastKillTime) {
+                            const kt = new Date(pilot.lastKillTime);
+                            const ageMs = Date.now() - kt.getTime();
+                            const ageDays = ageMs / (1000 * 60 * 60 * 24);
+                            const rc = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
+                            const actLine = document.createElement('div');
+                            actLine.className = 'pilot-bottom-line';
+                            actLine.style.marginTop = '1px';
+                            actLine.innerHTML = `No recent losses · <span class="${rc}">last activty (kill) ${kt.toLocaleDateString()}</span>`;
+                            row.appendChild(actLine);
+                        } else {
+                            const noFit = document.createElement('div');
+                            noFit.className = 'pilot-bottom-line placeholder';
+                            noFit.style.marginTop = '1px';
+                            noFit.textContent = 'No recent losses on record';
+                            row.appendChild(noFit);
+                        }
                         return row;
                     }
 
-                    // Line 2: Date · Value
+                    // Single line: Lost [date] · [value] · last active [date] (color coded)
+                    const lossTime = new Date(loss.killmailTime).getTime();
+                    const killTime = pilot.lastKillTime ? new Date(pilot.lastKillTime).getTime() : 0;
+                    const actTime = Math.max(lossTime, killTime);
+                    const actDate = new Date(actTime).toLocaleDateString();
+                    const ageMs = Date.now() - actTime;
+                    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+                    const rc = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
+                    const actLabel = killTime > lossTime ? 'last activity (kill)' : 'last activity (loss)';
                     const lostDate = new Date(loss.killmailTime).toLocaleDateString();
-                    const valueStr = formatISK(loss.totalValue);
-                    const line2 = document.createElement('div');
-                    line2.className = 'pilot-bottom-line';
-                    line2.style.cssText = 'margin-top:1px;margin-bottom:3px';
-                    line2.textContent = `Lost ${lostDate} · ${valueStr}`;
-                    row.appendChild(line2);
+
+                    const lineLoss = document.createElement('div');
+                    lineLoss.className = 'pilot-bottom-line';
+                    lineLoss.style.cssText = 'margin-top:1px;margin-bottom:3px';
+                    lineLoss.innerHTML = `Lost ${lostDate} · ${formatISK(loss.totalValue)} · <span class="${rc}">${actLabel} ${actDate}</span>`;
+                    row.appendChild(lineLoss);
 
                     // Lines 3+: Fit
                     const kmUrl = `https://zkillboard.com/kill/${loss.killmailId}/`;

@@ -13,6 +13,7 @@ import {
   getAlliance,
   resolveTypeName,
   getCharacterShipLosses,
+  getCharacterShipKills,
   getKillmail,
   getShipStats,
 } from "./eveApi";
@@ -156,10 +157,10 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
     console.log(`[analyze] Ship type "${name}" → typeId ${id}`);
   }
 
-  // 5. Fetch losses per pilot and match against d-scan
+  // 5. Fetch losses and most-recent kills per pilot, matched against d-scan
   const pilotDataMap = new Map<
     string,
-    { characterId: number; losses: RecentLoss[]; corpName: string; allianceName?: string }
+    { characterId: number; losses: RecentLoss[]; lastKillTime: string | undefined; corpName: string; allianceName?: string }
   >();
 
   await Promise.all(
@@ -187,6 +188,17 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
       }
 
       const matchedLosses: RecentLoss[] = [];
+      // lastKillTime: most recent kill by this pilot on any ship, within the window
+      let lastKillTime: string | undefined;
+
+      // Fetch most-recent kill for this pilot (once per pilot, not per ship)
+      // Best-effort — wrapped so a failure never aborts loss matching
+      try {
+        const killEntries = await getCharacterShipKills(characterId, cutoff);
+        if (killEntries.length > 0 && killEntries[0].killmail_time) {
+          lastKillTime = killEntries[0].killmail_time;
+        }
+      } catch { /* ignore */ }
 
       // Query zkill once per (pilot, shipType) pair — server-side filtered,
       // so we only receive killmails that are actually relevant.
@@ -195,27 +207,32 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
 
       await Promise.all(
         resolvedShips.map(async ([shipName, typeId]) => {
+          // Fetch losses (existing behaviour)
           const zkEntries = await getCharacterShipLosses(characterId, typeId, cutoff);
           console.log(`  [zkill] ${pilotName} × ${shipName}: ${zkEntries.length} losses`);
 
           await Promise.all(
             zkEntries.map(async (zkEntry) => {
               const km = await getKillmail(zkEntry.killmail_id, zkEntry.zkb.hash);
-              if (!km) return;
-              if (new Date(km.killmail_time).getTime() < cutoff) return;
+              // Use ESI killmail time if available, fall back to zkill's own timestamp
+              const killmailTime = km?.killmail_time ?? zkEntry.killmail_time;
+              if (!killmailTime) return;
+              if (new Date(killmailTime).getTime() < cutoff) return;
 
-              const fitting = await parseFitting(km.victim.items ?? []);
+              const fitting = km ? await parseFitting(km.victim.items ?? []) : [];
               matchedLosses.push({
-                killmailId: km.killmail_id,
-                killmailTime: km.killmail_time,
+                killmailId: zkEntry.killmail_id,
+                killmailTime,
                 shipTypeId: typeId,
                 shipName,
                 totalValue: zkEntry.zkb.totalValue,
                 fitting,
-                solarSystemId: km.solar_system_id,
+                solarSystemId: km?.solar_system_id ?? 0,
               });
             })
           );
+
+          // (kills are fetched once per pilot above, not per ship type)
         })
       );
 
@@ -240,6 +257,7 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
       pilotDataMap.set(pilotName, {
         characterId,
         losses: matchedLosses,
+        lastKillTime,
         corpName,
         allianceName,
       });
@@ -255,12 +273,15 @@ export async function analyze(req: AnalyzeRequest): Promise<AnalysisResult> {
       const relevantLosses = data.losses.filter((l) => l.shipTypeId === typeId);
       if (relevantLosses.length === 0) continue;
 
+      const lastKillTime = data.lastKillTime;
+
       matchedPilots.push({
         characterId: data.characterId,
         characterName: pilotName,
         corporationName: data.corpName,
         allianceName: data.allianceName,
         matchedLosses: relevantLosses,
+        lastKillTime,
       });
     }
 

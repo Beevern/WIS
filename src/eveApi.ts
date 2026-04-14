@@ -91,6 +91,31 @@ async function retry<T>(fn: () => Promise<T>, retries = 3, delayMs = 500): Promi
   throw new Error("retry exhausted");
 }
 
+// Semaphore: limits concurrent zKillboard requests to avoid 429s
+class Semaphore {
+  private permits: number;
+  private queue: Array<() => void> = [];
+  constructor(permits: number) { this.permits = permits; }
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.permits > 0) {
+      this.permits--;
+    } else {
+      await new Promise<void>(resolve => this.queue.push(resolve));
+    }
+    try {
+      return await fn();
+    } finally {
+      const next = this.queue.shift();
+      if (next) next();
+      else this.permits++;
+    }
+  }
+}
+
+// zKillboard allows ~10 req/s; keep well below that
+const zkillSem = new Semaphore(4);
+
 // ── ESI helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -129,24 +154,27 @@ export async function resolveCharacterNames(
     }
   }
 
-  // Any names ESI didn't return — try zKillboard character search as fallback
+  // Any names ESI didn't return — retry individually so one bad name can't block the rest
   const missed = names.filter((n) => !result.has(n));
   if (missed.length > 0) {
-    console.log(`Falling back to zKill search for ${missed.length} names...`);
+    console.log(`Falling back to individual ESI lookups for ${missed.length} names...`);
     await Promise.allSettled(
       missed.map(async (name) => {
         try {
-          const resp = await retry(() =>
-            zkill.get<Array<{ character_id: number; name: string }>>(
-              `/characters/?name=${encodeURIComponent(name)}`
-            )
+          const resp = await esi.post<{
+            characters?: Array<{ id: number; name: string }>;
+          }>(
+            "/universe/ids/",
+            [name],
+            {
+              params: { datasource: "tranquility" },
+              headers: { "Content-Type": "application/json" },
+            }
           );
-          const match = (resp.data ?? []).find(
-            (c) => c.name.toLowerCase() === name.toLowerCase()
-          );
-          if (match) result.set(name, match.character_id);
+          const c = resp.data?.characters?.[0];
+          if (c) result.set(c.name, c.id);
         } catch {
-          // silently skip
+          // name doesn't exist in EVE — skip silently
         }
       })
     );
@@ -364,11 +392,11 @@ export async function getCharacterShipLosses(
   const all: ZkillEntry[] = [];
   for (let page = 1; page <= 10; page++) {
     try {
-      const resp = await retry(() =>
+      const resp = await zkillSem.run(() => retry(() =>
         zkill.get<ZkillEntry[]>(
           `/losses/characterID/${characterId}/shipTypeID/${shipTypeId}/page/${page}/`
         )
-      );
+      ));
       const entries = resp.data ?? [];
       if (entries.length === 0) break;
 
@@ -388,6 +416,41 @@ export async function getCharacterShipLosses(
       console.warn(`zKill fetch failed for char=${characterId} ship=${shipTypeId}:`, err?.message);
       break;
     }
+  }
+
+  zkillCache.set(key, all, ZKILL_TTL);
+  return all;
+}
+
+/**
+ * Fetch the most recent kill for a character (any ship) from zKillboard.
+ * Only page 1 is fetched — we just need the most recent kill timestamp.
+ * Isolated with its own try/catch so it never breaks loss matching.
+ */
+export async function getCharacterShipKills(
+  characterId: number,
+  sinceMs: number
+): Promise<ZkillEntry[]> {
+  const cacheHour = Math.floor(Date.now() / (60 * 60 * 1000));
+  const key = `kills:${characterId}:${cacheHour}`;
+  const cached = zkillCache.get(key);
+  if (cached) return cached;
+
+  const all: ZkillEntry[] = [];
+  try {
+    const resp = await zkillSem.run(() => retry(() =>
+      zkill.get<ZkillEntry[]>(
+        `/kills/characterID/${characterId}/page/1/`
+      )
+    ));
+    const entries = resp.data ?? [];
+    const withinWindow = entries.filter(e => {
+      if (!e.killmail_time) return true;
+      return new Date(e.killmail_time).getTime() >= sinceMs;
+    });
+    all.push(...withinWindow);
+  } catch (err: any) {
+    console.warn(`zKill kills fetch failed for char=${characterId}:`, err?.message);
   }
 
   zkillCache.set(key, all, ZKILL_TTL);

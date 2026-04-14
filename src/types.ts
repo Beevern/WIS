@@ -112,6 +112,8 @@ export interface PilotMatch {
   allianceName?: string;
   /** losses that match a ship currently on d-scan */
   matchedLosses: RecentLoss[];
+  /** most recent kill time for this pilot flying a matched ship type (ISO string) */
+  lastKillTime?: string;
 }
 
 export interface ShipStats {
