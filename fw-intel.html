@@ -275,6 +275,20 @@
             flex-shrink: 0;
         }
 
+        /* ── Likely badge (pilot's most recent kill was in this ship) ── */
+        .likely-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(255,200,0,0.12);
+            border: 1px solid rgba(255,200,0,0.45);
+            color: #ffc800;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         /* ── Tiny toggle buttons (collapse/expand) ── */
         .toggle-btn {
             background: none;
@@ -755,7 +769,7 @@
         <div class="modal-title">How to Use</div>
         <div class="modal-body">
             <section class="hero section">
-            <h1>EVE D-Scan Pilot Matcher</h1>
+            <h1>Who's in Space?</h1>
             <p>This tool helps low-sec PvP-ers match ships on d-scan to pilots in local to see their fit.</p>
             </section>
 
@@ -832,7 +846,54 @@
 </div>
 
 <script>
+/**
+ * fw-intel.html — Single-page frontend for the "Who's in Space?" (WIWIS) FW Intel Tool.
+ *
+ * OVERVIEW
+ * --------
+ * This file is both the HTML layout and all client-side JavaScript in one page.
+ * It communicates with the Node.js backend (server.ts → /analyze) to cross-reference
+ * pilots in local with ships on d-scan.
+ *
+ * MAIN SECTIONS (in order below):
+ *   1. EVE_SHIPS / EVE_SHIPS_SET  — Full vocabulary of ship names, used by OCR parsing to
+ *                                   recognise ship types in screenshot text.
+ *   2. OCR_NAME_BLOCKLIST         — Words that look like pilot names but are definitely not
+ *                                   (e.g. "zkillboard", "Alliance", "Solo").
+ *   3. FACTION_KEYS / FACTION_BG  — Keyword lists and background colours for detecting which
+ *                                   EVE faction a corp/alliance belongs to (Caldari, Gallente, etc.)
+ *   4. enrichConfirmedPilots()    — Given OCR-extracted pilot+ship pairs, fetches corp/alliance
+ *                                   info and the most recent loss fitting from ESI + zKillboard.
+ *   5. Screenshot / OCR state     — Global variables that track the uploaded image and OCR results.
+ *   6. Paste / drag-drop / file   — Event handlers for getting a screenshot into the tool.
+ *   7. runOCR()                   — Loads Tesseract.js on demand, runs OCR on the screenshot,
+ *                                   then calls parseEVEText() + enrichConfirmedPilots().
+ *   8. parseEVEText()             — Parses raw OCR text into [{pilotName, shipType}] entries
+ *                                   by finding ship names (longest-match) and extracting the
+ *                                   preceding text as a pilot name.
+ *   9. Helper utilities           — escapeRegex, extractISK, extractDate, formatISK
+ *  10. renderConfirmedPreview()   — Builds the "Extracted from screenshot" panel with
+ *                                   editable pilot names that re-trigger ESI lookup on blur.
+ *  11. Parsing helpers            — parseDscan(), parsePilotsBlock(), parseDockedBlock()
+ *                                   (client-side mirrors of the backend parsers)
+ *  12. handleAnalyze()            — Reads all input fields, POSTs to /analyze, and calls
+ *                                   renderResults() with the response.
+ *  13. handleNewScan()            — Resets all UI state for a fresh scan.
+ *  14. buildResistDisplay()       — Builds the shield/armor/hull resistance bar display.
+ *  15. addPilotToggle()           — Adds a collapse chevron to each pilot row.
+ *  16. lastActivityTime/Info()    — Helpers to find the most recent kill/loss timestamp.
+ *  17. renderFightBanner()        — WIP: detects faction matchups and shows a fight summary
+ *                                   banner (currently commented out).
+ *  18. renderResults()            — Main rendering function: builds the full ship list with
+ *                                   confirmed (OCR) and unconfirmed (backend) pilot rows.
+ *  19. Fit popover                — Shows module icons on hover over fitting lines.
+ *  20. Event wiring               — Connects buttons, collapse/expand controls, etc.
+ */
+
 // ── EVE ship type vocabulary for OCR recognition ────────────────────────────
+// Complete list of relevant EVE ship names. Used by parseEVEText() to identify
+// ship types within OCR'd screenshot text. Sorted longest-first during matching
+// so "Caracal Navy Issue" is found before "Caracal".
 const EVE_SHIPS = [
     // T1 Frigates
     'Executioner','Inquisitor','Crucifer','Magnate','Punisher','Tormentor',
@@ -2026,7 +2087,12 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
             // Single line: Lost [date] · [value] · last active [date] (color coded)
             const _lossForActivity = c.recentLoss || (_bp?.matchedLosses?.[0] ?? null);
             const _lossTime = _lossForActivity ? new Date(_lossForActivity.killmailTime).getTime() : 0;
-            const _actTime = _lossTime; // confirmed pilots don't have lastKillTime from OCR path
+            // Prefer PilotMatch.lastKillTime (most recent kill in this ship type from backend),
+            // fall back to RecentLoss.lastKillTime for OCR-confirmed pilots
+            const _rawKillTime = _bp?.lastKillTime || _lossForActivity?.lastKillTime;
+            const _killTime = _rawKillTime ? new Date(_rawKillTime).getTime() : 0;
+            const _actTime  = Math.max(_lossTime, _killTime) || 0;
+            const _actType  = _killTime > _lossTime ? 'kill' : 'loss';
             const tagDate = c.dateLost
                 || (_lossForActivity?.killmailTime ? new Date(_lossForActivity.killmailTime).toLocaleDateString() : null);
             const tagVal  = c.valueISK ?? _lossForActivity?.totalValue;
@@ -2034,7 +2100,6 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                 const _ageMs = _actTime ? Date.now() - _actTime : null;
                 const _ageDays = _ageMs != null ? _ageMs / (1000 * 60 * 60 * 24) : null;
                 const _rc = _ageDays == null ? 'recency-stale' : _ageDays <= 7 ? 'recency-fresh' : _ageDays <= 30 ? 'recency-recent' : 'recency-stale';
-                const _actDate = _actTime ? new Date(_actTime).toLocaleDateString() : null;
                 const lineLoss = document.createElement('div');
                 lineLoss.className = 'pilot-bottom-line';
                 lineLoss.style.cssText = 'margin-top:1px;margin-bottom:3px';
@@ -2042,7 +2107,7 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                 if (tagDate) parts.push(`Lost ${tagDate}`);
                 if (tagVal)  parts.push(formatISK(tagVal));
                 let html = parts.join(' · ');
-                if (_actDate) html += ` · <span class="${_rc}">last activity (loss) ${_actDate}</span>`;
+                if (_actTime) html += ` · <span class="${_rc}">last activity (${_actType}) ${new Date(_actTime).toLocaleString()}</span>`;
                 lineLoss.innerHTML = html;
                 row.appendChild(lineLoss);
             }
@@ -2132,45 +2197,55 @@ function renderResults(data, confirmed = [], screenshotOnly = false, onGridCount
                         as.textContent = pilot.allianceName;
                         line1.appendChild(as);
                     }
+
+                    if (pilot.isLikelyActive) {
+                        const lb = document.createElement('span');
+                        lb.className = 'likely-badge';
+                        lb.textContent = 'LIKELY';
+                        lb.title = 'This pilot\'s most recent kill was in this ship type';
+                        line1.appendChild(lb);
+                    }
+
                     row.appendChild(line1);
                     addPilotToggle(row, line1);
 
                     if (!loss) {
-                        if (pilot.lastKillTime) {
+                        const actLine = document.createElement('div');
+                        actLine.className = 'pilot-bottom-line';
+                        actLine.style.marginTop = '1px';
+                        if (pilot.lastKillTime && pilot.lastKillShipName) {
                             const kt = new Date(pilot.lastKillTime);
                             const ageMs = Date.now() - kt.getTime();
                             const ageDays = ageMs / (1000 * 60 * 60 * 24);
                             const rc = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
-                            const actLine = document.createElement('div');
-                            actLine.className = 'pilot-bottom-line';
-                            actLine.style.marginTop = '1px';
-                            actLine.innerHTML = `No recent losses · <span class="${rc}">last activty (kill) ${kt.toLocaleDateString()}</span>`;
-                            row.appendChild(actLine);
+                            actLine.innerHTML = `Pilot's last kill was with <span class="${rc}">${esc(pilot.lastKillShipName)}</span> at ${kt.toLocaleString()}`;
                         } else {
-                            const noFit = document.createElement('div');
-                            noFit.className = 'pilot-bottom-line placeholder';
-                            noFit.style.marginTop = '1px';
-                            noFit.textContent = 'No recent losses on record';
-                            row.appendChild(noFit);
+                            actLine.className += ' placeholder';
+                            actLine.textContent = 'No recent activity on record';
                         }
+                        row.appendChild(actLine);
                         return row;
                     }
 
-                    // Single line: Lost [date] · [value] · last active [date] (color coded)
-                    const lossTime = new Date(loss.killmailTime).getTime();
-                    const killTime = pilot.lastKillTime ? new Date(pilot.lastKillTime).getTime() : 0;
-                    const actTime = Math.max(lossTime, killTime);
-                    const actDate = new Date(actTime).toLocaleDateString();
-                    const ageMs = Date.now() - actTime;
-                    const ageDays = ageMs / (1000 * 60 * 60 * 24);
-                    const rc = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
-                    const actLabel = killTime > lossTime ? 'last activity (kill)' : 'last activity (loss)';
-                    const lostDate = new Date(loss.killmailTime).toLocaleDateString();
+                    // Last kill line
+                    if (pilot.lastKillTime && pilot.lastKillShipName) {
+                        const kt = new Date(pilot.lastKillTime);
+                        const ageMs = Date.now() - kt.getTime();
+                        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+                        const rc = ageDays <= 7 ? 'recency-fresh' : ageDays <= 30 ? 'recency-recent' : 'recency-stale';
+                        const killLine = document.createElement('div');
+                        killLine.className = 'pilot-bottom-line';
+                        killLine.style.cssText = 'margin-top:1px;margin-bottom:3px';
+                        killLine.innerHTML = `Pilot's last kill was with <span class="${rc}">${esc(pilot.lastKillShipName)}</span> at ${kt.toLocaleString()}`;
+                        row.appendChild(killLine);
+                    }
 
+                    // Loss line: Lost [date] · [value]
+                    const lostDate = new Date(loss.killmailTime).toLocaleDateString();
                     const lineLoss = document.createElement('div');
                     lineLoss.className = 'pilot-bottom-line';
                     lineLoss.style.cssText = 'margin-top:1px;margin-bottom:3px';
-                    lineLoss.innerHTML = `Lost ${lostDate} · ${formatISK(loss.totalValue)} · <span class="${rc}">${actLabel} ${actDate}</span>`;
+                    lineLoss.innerHTML = `Lost ${lostDate} · ${formatISK(loss.totalValue)}`;
                     row.appendChild(lineLoss);
 
                     // Lines 3+: Fit
@@ -2255,13 +2330,20 @@ usageModal.addEventListener('click', e => { if (e.target === usageModal) usageMo
 document.addEventListener('keydown', e => { if (e.key === 'Escape') usageModal.classList.remove('open'); });
 
 // ── Fit popover ──────────────────────────────────────────────────────────────
+// The fit popover is a floating tooltip that follows the cursor and shows a
+// visual diagram of a pilot's ship fitting (modules in slots as small icons).
 const fitPopover    = document.getElementById('fitPopover');
 const fitPopPilot   = document.getElementById('fitPopoverPilot');
 const fitPopShip    = document.getElementById('fitPopoverShip');
 const fitPopDiagram = document.getElementById('fitPopoverDiagram');
 const fitPopRigs    = document.getElementById('fitPopoverRigs');
 
-// Group IDs for consumables/charges — excluded from the fit visualization
+/**
+ * EVE group IDs that identify consumable/charge item categories.
+ * These are excluded from the fitting display — we show only fitted modules,
+ * not ammo, scripts, or cap boosters loaded into them.
+ * Group IDs come from the EVE SDE (Static Data Export).
+ */
 const CHARGE_GROUP_IDS = new Set([
     83,  // Charge Medium (cap boosters M, missiles M, etc.)
     85,  // Charge Large
@@ -2281,12 +2363,20 @@ const CHARGE_GROUP_IDS = new Set([
     476, // Fighter Ammunition
 ]);
 
-// typeName (lowercase) → {id, groupID} — populated from invTypes.csv
+/**
+ * In-memory map: typeName (lowercase) → { id: string, groupID: number }
+ * Populated at startup from invTypes.csv (served by the backend).
+ * Used to resolve module names → type IDs for icon URLs, and to look up
+ * groupIDs for the consumable filter.
+ */
 const invTypeMap = new Map();
+
+// Load invTypes.csv asynchronously at page load — it's not critical, so failures
+// just mean some icon URLs and consumable checks fall back to name heuristics.
 (async () => {
     try {
         const txt = await fetch('./invTypes.csv').then(r => r.text());
-        // Skip header line; columns: typeID(0), groupID(1), typeName(2), ...
+        // Format: typeID, groupID, typeName, ... (comma-separated, first row is header)
         const lines = txt.split('\n');
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -2296,6 +2386,7 @@ const invTypeMap = new Map();
             if (first === -1 || second === -1) continue;
             const typeID  = line.slice(0, first).trim();
             const groupID = Number(line.slice(first + 1, second).trim());
+            // typeName may be quoted; strip quotes and take only the first CSV field
             const typeName = line.slice(second + 1).trim()
                 .replace(/^"(.*)"$/, '$1')
                 .split(',')[0].trim();
@@ -2307,6 +2398,11 @@ const invTypeMap = new Map();
     }
 })();
 
+/**
+ * Build an EVE CDN icon URL for a module/item by name.
+ * Strips trailing "x{qty}" suffixes first (e.g. "Shield Extender x2" → "Shield Extender").
+ * Returns null if the type isn't in invTypeMap.
+ */
 function typeIconUrl(typeName) {
     const baseName = typeName.replace(/\s+x\d+$/, '').trim();
     const entry = invTypeMap.get(baseName.toLowerCase());
@@ -2314,13 +2410,19 @@ function typeIconUrl(typeName) {
     return `https://images.evetech.net/types/${entry.id}/icon`;
 }
 
-// Names that should always be treated as consumables regardless of groupID lookup
+// Hard-coded name fragments that are always consumables, regardless of the CSV lookup.
+// Used as a fast-path before the groupID check.
 const CONSUMABLE_NAME_FRAGMENTS = [
     'nanite repair paste',
     'cap booster',
     'navy cap booster',
 ];
 
+/**
+ * Returns true if a module name refers to a consumable item (ammo, paste, booster, etc.)
+ * that should be excluded from the fitting display.
+ * Checks name fragments first, then falls back to EVE groupID via invTypeMap.
+ */
 function isConsumable(typeName) {
     const baseName = typeName.replace(/\s+x\d+$/, '').trim().toLowerCase();
     if (CONSUMABLE_NAME_FRAGMENTS.some(f => baseName.includes(f))) return true;

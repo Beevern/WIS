@@ -1,3 +1,7 @@
 @echo off
+title WIS Backend Server
 cd /d "%~dp0"
-npm run dev
+call npm run dev
+echo.
+echo Server stopped. Press any key to close...
+pause > nul
